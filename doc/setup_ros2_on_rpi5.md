@@ -46,6 +46,7 @@ sudo rosdep init
 rosdep update
 sudo apt update
 sudo apt install python3-opencv -y
+sudo apt install ros-lyrical-rqt ros-lyrical-rqt-common-plugins -y
 sudo apt autoremove -y
 ```
 
