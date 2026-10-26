@@ -124,7 +124,7 @@ class RobobikeBridge():
             value (float, optional): ボタンに対応する値。指定しない場合は None。
 
         Returns:
-            dict: レスポンス情報を含む辞書。成功時は 'status' キーに 'success' が、失敗時は 'status' キーに 'error' が含まれる。
+            dict: 成功時はレスポンス情報、失敗時は 'status' と 'error' を含む辞書。
         """
         url = self._get_command_url(button, value)
         try:
@@ -143,9 +143,23 @@ class RobobikeBridge():
                         print(value)
                         csv_dict[index] = value
                         #csv_dict[index] = float(value) for value in csv_list
+                    if csv_dict.get('OK', '').strip() != 'OK':
+                        return {
+                            'status': 'error',
+                            'error': (
+                                'Robobike reported command failure: '
+                                f"OK={csv_dict.get('OK', '')!r}"
+                            ),
+                        }
                     return csv_dict
                 else:
-                    return csv_dict
+                    return {
+                        'status': 'error',
+                        'error': (
+                            f'Unexpected response field count: {len(csv_list)} '
+                            f'(expected {len(ROBOBIKE_RESPONSE_CSV_INDEXES_V6)})'
+                        ),
+                    }
 
         except (HTTPError, URLError, TimeoutError) as e:
             return {'status': 'error', 'error': str(e)}

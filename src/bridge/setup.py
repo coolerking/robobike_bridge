@@ -28,8 +28,9 @@ setup(
             'bridge_node = bridge.bridge_node:main',
             'dummybike = bridge.dummybike:run_dummy_bike',
             'pub_camera = bridge.pub_camera:main',
-            'pub_robobike = bridge.pub_robobike:main',
             'sub_camera = bridge.sub_camera:main',
+            'pub_robobike = bridge.pub_robobike:main',
+            'sub_robobike = bridge.sub_robobike:main',
         ],
     },
 )
