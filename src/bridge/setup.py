@@ -14,7 +14,7 @@ setup(
     package_data={'': ['py.typed']},
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Ta Ho',
+    maintainer='tontonton/140494',
     maintainer_email='Sammoxxxxxxxx@gmail.com',
     description='Bridge Node for ROBOBIKE',
     license='MIT License',

@@ -4,7 +4,7 @@
   <name>policy</name>
   <version>0.0.0</version>
   <description>Policy Node for ROBOBIKE to controll with policy</description>
-  <maintainer email="Sammoxxxxxxxx@gmail.com">Ta Ho</maintainer>
+  <maintainer email="Sammoxxxxxxxx@gmail.com">tontonton/140494</maintainer>
   <license>MIT License</license>
 
   <test_depend>ament_copyright</test_depend>

@@ -4,7 +4,7 @@
   <name>bridge</name>
   <version>0.0.0</version>
   <description>Bridge Node for ROBOBIKE</description>
-  <maintainer email="Sammoxxxxxxxx@gmail.com">Ta Ho</maintainer>
+  <maintainer email="Sammoxxxxxxxx@gmail.com">tontonton/140494</maintainer>
   <license>MIT License</license>
 
   <exec_depend>rclpy</exec_depend>
