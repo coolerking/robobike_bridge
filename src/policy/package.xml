@@ -3,9 +3,9 @@
 <package format="3">
   <name>policy</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="SammoHungGambou@gmail.com">Tasuku Hori</maintainer>
-  <license>TODO: License declaration</license>
+  <description>Policy Node for ROBOBIKE to controll with policy</description>
+  <maintainer email="Sammoxxxxxxxx@gmail.com">Ta Ho</maintainer>
+  <license>MIT License</license>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

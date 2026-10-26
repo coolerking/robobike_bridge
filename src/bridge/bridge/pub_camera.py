@@ -78,10 +78,11 @@ def main():
     image_publisher = ImagePublisherNode()
     try:
         import time
-        while True:
+        while rclpy.ok():
             image_publisher.take_picture()
             print('[main] took picture')
             time.sleep(PUBLISH_INTERVAL_SEC)
+        print('[main] publisher stopped')
     except KeyboardInterrupt:
         print('[main] publisher interrupted by user')
     finally:

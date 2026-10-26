@@ -14,8 +14,8 @@ setup(
     package_data={'': ['py.typed']},
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Tasuku Hori',
-    maintainer_email='SammoHungGambou@gmail.com',
+    maintainer='Ta Ho',
+    maintainer_email='Sammoxxxxxxxx@gmail.com',
     description='Policy Node for ROBOBIKE to controll with policy',
     license='MIT License',
     extras_require={

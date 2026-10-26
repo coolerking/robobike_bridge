@@ -4,10 +4,18 @@
 
 Raspberry Pi 5/Ubuntu Desktop 26.04 LTS/ROS2 Lyrical Luth のWiFi 接続された
 Robobike との通信をブリッジするためのモジュールです。
+
+実行例（テストのみ）：
+    python3 robobike.py --test # ダミーデータでの実行
+    python3 robobike.py # 実機データでの実行
 """
 import json
+import argparse
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
+
+# HTTP 通信のタイムアウト時間(秒)
+HTTP_TIMEOUT_SEC = 1.0
 
 # Robobike 本番機 接続用のデフォルト設定
 ROBOBIKE_DEFAULT_IP = "192.168.4.1"
@@ -120,7 +128,7 @@ class RobobikeBridge():
         """
         url = self._get_command_url(button, value)
         try:
-            with urlopen(url) as response:
+            with urlopen(url, timeout=HTTP_TIMEOUT_SEC) as response:
                 csv_str = response.read().decode('utf-8')
                 print(csv_str)
                 # CSV をパースしてリストに変換
@@ -139,13 +147,22 @@ class RobobikeBridge():
                 else:
                     return csv_dict
 
-        except (HTTPError, URLError) as e:
+        except (HTTPError, URLError, TimeoutError) as e:
             return {'status': 'error', 'error': str(e)}
 
 
 
-def main(test:bool=False):
-    if test:
+def test_robobike_bridge():
+    parser = argparse.ArgumentParser(
+        prog="pub_robobike",
+        description="Publish data from a WiFi-connected ROBOBIKE"
+    )
+    parser.add_argument(
+        '--test',
+        action='store_true',
+        help='Use dummy data instead of real ROBOBIKE data')
+    args = parser.parse_args()
+    if args.test:
         default_ip = "127.0.0.1:8080"
     else:
         default_ip = ROBOBIKE_DEFAULT_IP
@@ -155,5 +172,4 @@ def main(test:bool=False):
     print(json.dumps(csv_dict, indent=4, ensure_ascii=False))
 
 if __name__ == "__main__":
-    #main(test=True) # Test
-    main() # Product
+    test_robobike_bridge()

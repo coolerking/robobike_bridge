@@ -14,8 +14,8 @@ setup(
     package_data={'': ['py.typed']},
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Tasuku Hori',
-    maintainer_email='SammoHungGambou@gmail.com',
+    maintainer='Ta Ho',
+    maintainer_email='Sammoxxxxxxxx@gmail.com',
     description='Bridge Node for ROBOBIKE',
     license='MIT License',
     extras_require={
@@ -25,7 +25,11 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'bridge_node = bridge.bridge_node:main'
+            'bridge_node = bridge.bridge_node:main',
+            'dummybike = bridge.dummybike:run_dummy_bike',
+            'pub_camera = bridge.pub_camera:main',
+            'pub_robobike = bridge.pub_robobike:main',
+            'sub_camera = bridge.sub_camera:main',
         ],
     },
 )
