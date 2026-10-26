@@ -48,6 +48,7 @@ sudo apt install python3-opencv -y
 sudo apt install ros-dev-tools -y
 sudo apt install build-essential cmake python3-rosdep python3-vcstool python3-pip -y
 sudo apt install ros-lyrical-rqt ros-lyrical-rqt-common-plugins -y
+sudo apt install ros-lyrical-ros2pkg ros-lyrical-ros2cli -y
 echo "source /opt/ros/lyrical/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 sudo apt autoremove -y
