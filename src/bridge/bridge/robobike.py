@@ -22,39 +22,43 @@ ROBOBIKE_DEFAULT_IP = "192.168.4.1"
 ROBOBIKE_COMMAND_PREFIX = "/command?button="
 ROBOBIKE_VALUE_SUFFIX = "&value="
 ROBOBIKE_COMMAND_NAMES = [
-    "stp_all",          # Robobike 全停止
-    "only_data",        # データ取得のみ
-    "bt_F",             # FORWARDボタンを押したときのコマンド
-    "bt_S",             # STOPボタンを押したときのコマンド
-    "bt_L",             # LEFTボタンを押したときのコマンド
-    "bt_R",             # RIGHTボタンを押したときのコマンド
-    "bt_Str_S",         # ステアリング値を送信するコマンド(valueで (-100<LEFT>, 100<RIGHT>)の範囲で指定)
-    "bt_BK",            # BACKボタンを押したときのコマンド
-    "bt_A_Up_0",
-    "bt_A_Dn_0",
-    "bt_A_Up",
-    "bt_A_Dn",
-    "bt_A_L",
-    "bt_A_R",
-    "bt_S_Up",
-    "bt_S_Dn",
-    "bt_R_Up",
-    "bt_R_Dn",
-    "bt_D_St",
-    "bt_D_Up",
-    "bt_D_Dn",
-    "bt_Std_nutAuto",
-    "bt_Std_nutUp",
-    "bt_Std_nutDn",
-    "bt_str_turnUp",
-    "bt_str_turnDn",
-    "bt_strcmd_Up",
-    "bt_strcmd_Dn",
-    "IR_ON",
-    "IR_OFF",
-    "bt_yaw_coeffUp",
-    "bt_yaw_coeffDn",
-    "bt_Ld_Default"
+    "stp_all",          #  1: Robobike 全停止
+    "only_data",        #  2: データ取得のみ
+    "bt_F",             #  3: 10秒直進
+    "bt_S",             #  4: 停止
+    "bt_L",             #  5: 停止したまま左一杯
+    "bt_R",             #  6: 停止したまま右一杯
+    "bt_Str_S",         #  7: ステアリング値を送信するコマンド(valueで (-100<LEFT>, 100<RIGHT>)の範囲で指定)
+    "bt_BK",            #  8: 連続後進
+    "bt_A_Up_0",        #  9: モータ速度(mot_std)+1
+    "bt_A_Dn_0",        # 10: モータ速度(mot_std)-1
+    "bt_A_Up",          # 11: モータ速度(mot_std)+1で連続前進(ステアリング角維持)
+    "bt_A_Dn",          # 12: モータ速度(mot_std)-1で連続前進(ステアリング角維持)
+    "bt_A_L",           # 13: ステアリング標準位置(str0)-1
+    "bt_A_R",           # 14: ステアリング標準位置(str0)+1
+    "bt_S_Up",          # 15: ステアリング感度(gain_str)+0.01
+    "bt_S_Dn",          # 16: ステアリング感度(gain_str)-0.01
+    "bt_R_Up",          # 17: ロール方向のゲイン(gain_w_roll)+1.00
+    "bt_R_Dn",          # 18: ロール方向のゲイン(gain_w_roll)-1.00
+    "bt_D_St",          # 19: 停止(mod_spd維持)
+    "bt_D_Up",          # 20: ステアリング差分感度(gain_str_diff)+0.01
+    "bt_D_Dn",          # 21: ステアリング差分感度(gain_str_diff)-0.01
+    "bt_Std_nutAuto",   # 22: 初期傾斜角を標準位置に戻す(停止)
+    "bt_Std_nutUp",     # 23: 初期傾斜角(ang_str_nut)+1
+    "bt_Std_nutDn",     # 24: 初期傾斜角(ang_str_nut)-1
+    "bt_str_turnUp",    # 25: ステアリング最大角(str_turn)+1
+    "bt_str_turnDn",    # 26: ステアリング最大角(str_turn)-1
+    "bt_strcmd_Up",     # 27: ステアリングコマンド速度(str_cmd_speed)+1
+    "bt_strcmd_Dn",     # 28: ステアリングコマンド速度(str_cmd_speed)-1
+    "IR_ON",            # 29: 赤外線センサーON
+    "IR_OFF",           # 30: 赤外線センサーOFF
+    "bt_yaw_coeffUp",   # 31: ヨー係数(yaw_coeff)+0.01
+    "bt_yaw_coeffDn",   # 32: ヨー係数(yaw_coeff)-0.01
+    "bt_sweepON",       # 33: スイープ動作開始：ステアリングがだんだん激しく小刻みに動く→しばらく動いたら停止
+    "bt_sweepOFF",      # 34: スイープ動作停止
+    "bt_autoCirc_Up",   # 35: 自動旋回モードのゲイン(auto_circ_gain)を上げる+0.01
+    "bt_autoCirc_Dn",   # 36: 自動旋回モードのゲイン(auto_circ_gain)を下げる-0.01
+    "bt_Ld_Default"     # 37: ロードデフォルト設定
 ]
 
 ROBOBIKE_RESPONSE_CSV_INDEXES_V6 = [
