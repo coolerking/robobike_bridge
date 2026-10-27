@@ -55,7 +55,19 @@ class RobobikeSubscriberNode(Node):
 
         self.get_logger().info('RobobikeSubscriberNode initialized successfully.')
 
-    def recieve_control_command(self, msg):
+    def recieve_control_command(self, msg) -> dict:
+        """
+        受信した制御コマンドを処理し、ROBOBIKEに送信します。
+        
+        Args:
+            msg (std_msgs.msg.String): 受信した制御コマンドのメッセージ
+
+        Returns:
+            dict: ROBOBIKEへの送信結果を含む辞書
+        
+        Error:
+            dict: command送信時の返却辞書(statusに'success'が含まれる)、もしくはエラー発生時の辞書(statusに'error'が含まれる)
+        """
         try:
             self.get_logger().info(f'Received control command: {msg.data}')
             control_dict = json.loads(msg.data)
@@ -67,7 +79,7 @@ class RobobikeSubscriberNode(Node):
                     value = float(value_str)
                 except ValueError:
                     self.get_logger().error(f'Invalid value: {value_str}')
-                    return
+                    return {'status': 'error', 'error': f'Invalid value: {value_str}'}
             else:
                 value = None
 
@@ -76,10 +88,13 @@ class RobobikeSubscriberNode(Node):
                 self.get_logger().error(
                     f'Failed to send command {command}: {result.get("error", "Unknown error")}'
                 )
-                return
-            self.get_logger().info(f'Sent command: {command}, value: {value}')
+                return {'status': 'error', 'error': f'Failed to send command {command}'}
+            self.get_logger().info(f'Sent command: {command}, value: {value}, status: {result.get("status")}')
+            result['status'] = 'success'
+            return result
         except Exception as e:
             self.get_logger().error(f'Error processing control command: {e}')
+            return {'status': 'error', 'error': str(e)}
 
 def main(args=None):
     """

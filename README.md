@@ -115,7 +115,9 @@ export ROS_DOMAIN_ID=10
 - ROBOBIKE
     - [ROBOBIKE公式サイト](https://robobikejp.com/)
         - [技術解説編](https://robobikejp.com/rctech02/)
-    - [ROBOBIKE ファームウェア GitHubリポジトリ](https://github.com/tneurjpy-cloud/robobike)
+    <!-- - [ROBOBIKE ファームウェア GitHubリポジトリ](https://github.com/tneurjpy-cloud/robobike) -->
+    - ROBOBIKE ファームウェア GitHubリポジトリ
+        URL公開されていたが、現在では公式サイトからの申し込みが必要
 
 ## ライセンス
 
