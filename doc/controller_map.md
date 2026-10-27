@@ -2,9 +2,15 @@
 
 保持しているROBOBIKEに対して、ロボットとしての仕様を分析した結果をまとめたものです。
 
-- 調査日：2026/10/27 
+- 調査日：2026/10/27
+
+![ROBOBIKE テスト機](../assets/robobike_test_bed.png)
+
+- ROBOBIKE テスト機 
     - PROGVER: 1042
     - DATAVER: 6
+
+
 
 ## MASTER ノード
 

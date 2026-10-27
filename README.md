@@ -118,6 +118,7 @@ export ROS_DOMAIN_ID=10
     <!-- - [ROBOBIKE ファームウェア GitHubリポジトリ](https://github.com/tneurjpy-cloud/robobike) -->
     - ROBOBIKE ファームウェア GitHubリポジトリ
         URL公開されていたが、現在では公式サイトからの申し込みが必要
+    - [ROBOBIKE 仕様 分析結果](./doc/controller_map.md)
 
 ## ライセンス
 
