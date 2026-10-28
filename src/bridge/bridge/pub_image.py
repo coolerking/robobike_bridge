@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ファイル名: pub_camera.py
+ファイル名: pub_image.py
 
 Raspberry Pi 5/Ubuntu Desktop 26.04 LTS/ROS2 Lyrical Luth にUSB接続され 
 /dev/video<IMAGE_DEV_LETTER> として認識されているWebカメラデバイスを使って
@@ -8,8 +8,8 @@ PUBLISH_INTERVAL_SEC 間隔で撮影した静止画を
 TOPICNAME_IMAGE トピックに配信します。
 
 実行例:
-    ros2 run monitor pub_camera # 実カメラ使用
-    ros2 run monitor pub_camera --dummy # ダミー画像使用
+    ros2 run monitor pub_image # 実カメラ使用
+    ros2 run monitor pub_image --dummy # ダミー画像使用
 """
 import sys
 import numpy as np
