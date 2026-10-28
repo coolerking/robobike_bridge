@@ -14,7 +14,7 @@ import sys
 import json
 import argparse
 from time import sleep
-from .robobike import RobobikeBridge
+from .robobike_bridge import RobobikeBridge
 import rclpy
 from rclpy.node import Node
 from rclpy.utilities import remove_ros_args

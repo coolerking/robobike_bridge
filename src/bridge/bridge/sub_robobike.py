@@ -19,7 +19,7 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile
 from std_msgs.msg import String
 from rclpy.utilities import remove_ros_args
-from .robobike import RobobikeBridge
+from .robobike_bridge import RobobikeBridge
 
 TOPICNAME_ROBOBIKE_CONTROL = "robobike_control"
 QUEUE_SIZE=10
