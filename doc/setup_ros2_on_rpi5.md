@@ -80,8 +80,7 @@ git clone https://github.com/coolerking/robobike_bridge.git
 cd robobike_bridge
 colcon build --symlink-install
 source install/setup.bash
-cd src/bridge/bridge
-python3 pub_camera.py
+ros2 run bridge pub_image
 ```
 
 > ずっとカメラ画像データを配信し続ける
@@ -89,8 +88,7 @@ python3 pub_camera.py
 - 別のターミナルを開き、以下のコマンドを実行する
 
 ```shell
-cd ~/ros_ws/robobike_bridge/src/bridge/bridge
-python3 sub_camera.py
+ros2 run bridge sub_image
 ```
 
 カメラ画像が表示されたらOK

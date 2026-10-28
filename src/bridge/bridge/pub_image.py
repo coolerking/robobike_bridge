@@ -8,8 +8,8 @@ PUBLISH_INTERVAL_SEC 間隔で撮影した静止画を
 TOPICNAME_IMAGE トピックに配信します。
 
 実行例:
-    ros2 run monitor pub_image # 実カメラ使用
-    ros2 run monitor pub_image --dummy # ダミー画像使用
+    ros2 run bridge pub_image # 実カメラ使用
+    ros2 run bridge pub_image --dummy # ダミー画像使用
 """
 import sys
 import numpy as np
@@ -118,7 +118,7 @@ def main():
 
     # 引数処理
     parser = argparse.ArgumentParser(
-        prog="pub_camera",
+        prog="pub_image",
         description="Publish camera image"
     )
     parser.add_argument(

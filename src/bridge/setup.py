@@ -25,10 +25,9 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'bridge_node = bridge.bridge_node:main',
             'dummybike = bridge.dummybike:run_dummy_bike',
-            'pub_camera = bridge.pub_image:main',
-            'sub_camera = bridge.sub_camera:main',
+            'pub_image = bridge.pub_image:main',
+            'sub_image = bridge.sub_image:main',
             'pub_robobike = bridge.pub_robobike:main',
             'sub_robobike = bridge.sub_robobike:main',
         ],
