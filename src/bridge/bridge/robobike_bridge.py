@@ -22,20 +22,27 @@ from http.client import IncompleteRead
 from io import StringIO
 from urllib.request import urlopen
 
-"""ROBOBIKE IP アドレス関連"""
+# ROBOBIKE 実機 IPアドレス
 from .constants import ROBOBIKE_DEFAULT_IP
+# dummyserver IPアドレス
 from .constants import ROBOBIKE_DUMMY_IP
 
-"""ROBOBIKE コマンド URL 関連"""
+# HTTP/GET command プレフィクス
 from .constants import ROBOBIKE_COMMAND_PREFIX
+# HTTP/GET value サフィックス(操舵角指定用)
 from .constants import ROBOBIKE_VALUE_SUFFIX
+# HTTP/GET get_acc プレフィクス
 from .constants import ROBOBIKE_GET_ACC_PREFIX
+# HTTP/GET clear_buffer プレフィクス
 from .constants import ROBOBIKE_CLEAR_BUFFER_PREFIX
 
-"""status/command戻り値関連"""
+# ステータスデータ(command="only_data"戻り値)項目数
 from .constants import ROBOBIKE_STATUS_CSV_INDEXES_LEN
+# ステータスデータ(command="only_data"戻り値)の float 値の項目インデックス
 from .constants import ROBOBIKE_STATUS_CSV_INDEXES_FLOAT
+# ステータスデータ(command="only_data"戻り値)の int 値の項目インデックス
 from .constants import ROBOBIKE_STATUS_CSV_INDEXES_INT
+# ステータスデータ インデックス番号←→項目名の変換用関数
 from .constants import get_command_index, get_status_name
 
 # テレメトリデータ(get_acc戻り値)項目数
@@ -52,7 +59,7 @@ from .constants import TELEMETRY_WINDOW_MSEC
 # HTTP通信のタイムアウト時間(秒)
 from .constants import HTTP_TIMEOUT_SEC
 
-# ロガー
+# ロガー設定
 logger = logging.getLogger(__name__)
 
 class RobobikeBridge():
