@@ -50,20 +50,56 @@ class TestIncompleteResponse(unittest.TestCase):
                 with self.assertRaises(IncompleteRead):
                     self.bridge.send_clear_buffer()
 
-    def test_interrupted_clear_returns_telemetry_error_without_updating_history(self):
+    def test_clear_buffer_accepts_ok(self):
+        for body in (b'OK', b'OK\r\n'):
+            with self.subTest(body=body):
+                with patch(
+                    'bridge.robobike_bridge.urlopen', return_value=BytesIO(body)
+                ) as request:
+                    self.assertIsNone(self.bridge.send_clear_buffer())
+                request.assert_called_once()
+
+    def test_clear_buffer_rejects_unexpected_responses(self):
+        for body in (b'0', b'', b'ERROR', b'ok'):
+            with self.subTest(body=body):
+                with patch(
+                    'bridge.robobike_bridge.urlopen', return_value=BytesIO(body)
+                ):
+                    with self.assertRaisesRegex(
+                        ValueError, 'Unexpected clear_buffer response'
+                    ):
+                        self.bridge.send_clear_buffer()
+
+    def test_unexpected_clear_response_preserves_telemetry_history(self):
         sample = dict(a='a', time=950, drv=2.0)
         self.bridge._telemetry_history = [sample]
         self.bridge._latest_telemetry_time = 950
-        csv_data = ','.join(['a', '1000'] + ['1'] * 11).encode('utf-8')
+        for body in (b'0', b'', b'ERROR', b'ok'):
+            with self.subTest(body=body):
+                with patch(
+                    'bridge.robobike_bridge.urlopen',
+                    return_value=BytesIO(body),
+                ) as request:
+                    with self.assertRaisesRegex(
+                        ValueError, 'Unexpected clear_buffer response'
+                    ):
+                        self.bridge.send_clear_buffer()
+                request.assert_called_once()
+                self.assertEqual(self.bridge._telemetry_history, [sample])
+                self.assertEqual(self.bridge._latest_telemetry_time, 950)
+
+    def test_interrupted_clear_reraises_without_updating_history(self):
+        sample = dict(a='a', time=950, drv=2.0)
+        self.bridge._telemetry_history = [sample]
+        self.bridge._latest_telemetry_time = 950
         with patch(
             'bridge.robobike_bridge.urlopen',
-            side_effect=[BytesIO(csv_data), self.interrupted_response()],
+            return_value=self.interrupted_response(),
         ) as request:
             with self.assertLogs('bridge.robobike_bridge', level='ERROR'):
-                result = self.bridge.get_telemetry()
-        self.assertEqual(result['status'], 'error')
-        self.assertIn('IncompleteRead', result['error'])
-        self.assertEqual(request.call_count, 2)
+                with self.assertRaises(IncompleteRead):
+                    self.bridge.send_clear_buffer()
+        request.assert_called_once()
         self.assertEqual(self.bridge._telemetry_history, [sample])
         self.assertEqual(self.bridge._latest_telemetry_time, 950)
 
@@ -119,14 +155,17 @@ class TestIncompleteResponse(unittest.TestCase):
                     )
                 else:
                     response.read.return_value = b'\xff'
-                csv_data = ','.join(['a', '1000'] + ['1'] * 11).encode('utf-8')
                 with patch(
                     'bridge.robobike_bridge.urlopen',
-                    side_effect=[BytesIO(csv_data), response],
+                    return_value=response,
                 ) as request:
                     with self.assertLogs('bridge.robobike_bridge', level='ERROR'):
-                        result = self.bridge.get_telemetry()
-                self.assertEqual(result['status'], 'error')
-                self.assertEqual(request.call_count, 2)
+                        expected_error = (
+                            ConnectionResetError if failure == 'reset'
+                            else UnicodeDecodeError
+                        )
+                        with self.assertRaises(expected_error):
+                            self.bridge.send_clear_buffer()
+                request.assert_called_once()
                 self.assertEqual(self.bridge._telemetry_history, [sample])
                 self.assertEqual(self.bridge._latest_telemetry_time, 950)

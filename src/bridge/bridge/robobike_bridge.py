@@ -206,16 +206,13 @@ class RobobikeBridge():
         新規データがなければ履歴を再送せず None を返します。
         解析・デコードや通信に失敗した場合は status=error の辞書を返します。
         非有限値（NaN・無限大）や非有限の平均値もエラーとして扱います。
-        ロボット側のバッファ消去とローカル履歴の保持は独立しています。
+        ロボット側のバッファは自動消去しません。
+        必要な場合は send_clear_buffer() を明示的に呼び出してください。
         """
         try:
             # /get_acc からCSV形式のテレメトリデータを取得
             with urlopen(self._get_telemetry_url(), timeout=HTTP_TIMEOUT_SEC * 60) as response:
                 csv_str = response.read().decode('utf-8')
-            # strip後に空でなければバッファをクリア
-            if csv_str.strip():
-                # /clear_buffer を呼び出してバッファをクリア
-                self.send_clear_buffer()
 
             # telemetryデータ格納用
             telemetry = []
@@ -316,7 +313,7 @@ class RobobikeBridge():
             return averaged_sample
         # 変換エラー、CSVエラーの場合
         except (ValueError, csv.Error) as error:
-            logger.exception('Failed to parse or clear Robobike telemetry: %s', error)
+            logger.exception('Failed to parse Robobike telemetry: %s', error)
             # エラー情報の入った辞書を返す
             return {'status': 'error', 'error': str(error)}
         # 接続リセットを含む通信エラー、応答の途中切断の場合
@@ -337,8 +334,8 @@ class RobobikeBridge():
             with urlopen(self._get_clear_buffer_url(), timeout=HTTP_TIMEOUT_SEC) as response:
                 # 戻り値を取得
                 clear_result = response.read().decode('utf-8').strip()
-                # 戻り値が0以外であればエラー
-                if clear_result != '0':
+                # 戻り値がOK以外であればエラー
+                if clear_result != 'OK':
                     raise ValueError(f'Unexpected clear_buffer response: {clear_result!r}')
             return
         except (OSError, IncompleteRead, UnicodeDecodeError) as e:

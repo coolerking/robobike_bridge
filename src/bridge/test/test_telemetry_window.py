@@ -19,13 +19,14 @@ class TestTelemetryWindow(unittest.TestCase):
             for timestamp, value in samples
         ]
         responses = [BytesIO('\n'.join(rows).encode('utf-8'))]
-        if rows:
-            responses.append(BytesIO(b'0'))
         with patch(
             'bridge.robobike_bridge.urlopen', side_effect=responses
-        ) as request:
+        ) as request, patch.object(self.bridge, 'send_clear_buffer') as clear_buffer:
             result = self.bridge.get_telemetry()
-        self.assertEqual(request.call_count, 2 if rows else 1)
+        request.assert_called_once_with(
+            self.bridge._get_telemetry_url(), timeout=unittest.mock.ANY
+        )
+        clear_buffer.assert_not_called()
         return result
 
     def test_averages_across_reads(self):

@@ -137,7 +137,8 @@ ROBOBIKEのWiFi APは最大2台まで接続可能で、２台目は非マスタ�
 | 11 | "acc_y" | ACC_Y | -1.292 | 加速度センサーY軸 |
 | 12 | "acc_z" | ACC_Z | -9.663 | 加速度センサーZ軸 |
 
-- `curl http://192.168.4.1/clear_buffer` を実行すると、ROBOBIKEのセンサーバッファがクリアされます
+- `curl http://192.168.4.1/clear_buffer` を実行すると、ROBOBIKEのセンサーバッファがクリアされます。正常時の応答本文は `OK` です
+- ROS2側の `get_telemetry()` は `/get_acc` のみを呼び出し、バッファを自動クリアしません。必要な場合は `send_clear_buffer()` を明示的に呼び出します
 - IMU値（ジャイロ・加速度）は Tvector6d acc 経由で ICM-426xx から取得され、AC_SENSITIVITY/GY_SENSITIVITY で物理量に変換済みです
 - `curl http://192.168.4.1/get_acc` を実行したサンプルはこちら（803行のデータが返却されました）
 

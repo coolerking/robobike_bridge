@@ -45,6 +45,7 @@ sudo rosdep init
 rosdep update
 sudo apt update
 sudo apt install python3-opencv -y
+sudo apt install python3-pygame -y
 sudo apt install ros-dev-tools -y
 sudo apt install build-essential cmake python3-rosdep python3-vcstool python3-pip -y
 sudo apt install ros-lyrical-rqt ros-lyrical-rqt-common-plugins -y

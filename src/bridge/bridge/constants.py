@@ -6,37 +6,49 @@ ROS2 bridge パッケージ内の定数を定義するファイル
 from typing import Final
 from rclpy.qos import QoSProfile
 
-"""デバッグフラグ"""
+# デバッグフラグ
 DEBUG: Final[bool] = True
 
-"""トピック名(カメラ画像用)"""
+# トピック名(カメラ画像用)
 TOPICNAME_IMAGE: Final[str] = 'camera_image'
+# トピック名(Joy用)
+TOPICNAME_JOY: Final[str] = 'joy'
 
-"""QoS設定"""
+# QoS設定
 QOS_PROFILE: Final[QoSProfile] = QoSProfile(depth=10)
 
-"""カメラ画像エンコーディングタイプ"""
+# カメラ画像エンコーディングタイプ
 IMAGE_ENCODING_TYPE: Final[str] = 'bgr8'
-
-"""カメラデバイスの番号(/dev/videoX の X 部分)"""
+#カメラデバイスの番号(/dev/videoX の X 部分)
 CAMERA_DEV_LETTER: Final[int] = 0  # /dev/video0
 #CAMERA_DEV_LETTER: Final[int] = 1  # /dev/video1
 
-"""Publish間隔(秒)"""
+
+# ゲームパッドデバイスの番号(/dev/input/jsX の X 部分)
+GAMEPAD_DEV_LETTER: Final[int] = 0  # /dev/input/js0
+#GAMEPAD_DEV_LETTER: Final[int] = 1  # /dev/input/js1
+
+# ゲームパッド入力チェックの間隔
+GAMEPAD_CHECK_INTERVAL_SEC: Final[float] = 0.1  # ゲームパッド入力チェックの間隔(秒)
+
+# ゲームパッドアナログ値変化有無を判断する閾値
+GAMEPAD_ANALOG_CHANGE_THRESHOLD: Final[float] = 0.05
+
+# Publish間隔(秒)
 PUBLISH_INTERVAL_SEC: Final[float] = 0.05
 
-"""HTTP 通信のタイムアウト時間(秒)"""
+# HTTP 通信のタイムアウト時間(秒)
 HTTP_TIMEOUT_SEC: Final[float] = 1.0
 
-"""テレメトリ平均化対象の時間幅(ミリ秒)"""
+# テレメトリ平均化対象の時間幅(ミリ秒)
 TELEMETRY_WINDOW_MSEC: Final[int] = 100
 
 
-"""ROBOBIKE IPアドレス"""
-ROBOBIKE_DEFAULT_IP: Final[str] = "192.168.4.1"
-ROBOBIKE_DUMMY_IP: Final[str]   = "127.0.0.1:8080"
+# ROBOBIKE IPアドレス
+ROBOBIKE_DEFAULT_IP: Final[str] = "192.168.4.1" # 実機
+ROBOBIKE_DUMMY_IP: Final[str]   = "127.0.0.1:8080" # ダミー
 
-"""ROBOBIKE GET コマンド用の URL プレフィックス/サフィックス"""
+# ROBOBIKE GET コマンド用の URL プレフィックス/サフィックス
 ROBOBIKE_COMMAND_PREFIX: Final[str] = "/command?button=" # command送信(ボタン番号 1以上)
 ROBOBIKE_VALUE_SUFFIX: Final[str] = "&value=" # ROBOBIKE 操舵値(int)(100,-100)
 ROBOBIKE_GET_ACC_PREFIX: Final[str] = "/get_acc" # ROBOBIKE テレメトリCSV(複数行)取得
