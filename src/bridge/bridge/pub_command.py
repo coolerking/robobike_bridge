@@ -178,6 +178,7 @@ class GamepadPublisher(Node):
 
         if DEBUG:
             self.get_logger().debug(f"Published Joy message. {new_joy_msg}")
+            print(f"Published Joy message. {new_joy_msg}")
 
 
 def main() -> None:
