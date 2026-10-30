@@ -76,7 +76,7 @@ def main():
     """
     メイン関数
 
-    PUBLISH_INTERVAL_SEC 間隔でROBOBIKEのonly_dataでえられるステータス情報を配信します。
+    PUBLISH_INTERVAL_SEC(--interval で変更可)間隔でROBOBIKEのonly_dataでえられるステータス情報を配信します。
     Ctrl+C を押すと終了します。
     """
     if DEBUG:
@@ -91,6 +91,11 @@ def main():
         '--dummy',
         action='store_true',
         help='Connect to dummybike instead of the real ROBOBIKE')
+    parser.add_argument(
+        '--interval',
+        type=float,
+        default=PUBLISH_INTERVAL_SEC,
+        help=f'Polling interval in seconds (default: {PUBLISH_INTERVAL_SEC})')
     app_args = remove_ros_args(args=sys.argv)[1:]
     args = parser.parse_args(app_args)
     if DEBUG:
@@ -109,7 +114,7 @@ def main():
                     print('[main] sent status')
             elif DEBUG:
                 print(f'[main] error in status({status}), skipping')
-            time.sleep(PUBLISH_INTERVAL_SEC)
+            time.sleep(args.interval)
         if DEBUG:
             print('[main] publisher stopped')
     except KeyboardInterrupt:

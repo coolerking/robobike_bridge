@@ -99,6 +99,18 @@ ROBOBIKE_COMMAND_NAMES_REQUIRING_VALUE: Final[list[str]] = [
 ]
 # value値を必要とするコマンド名リスト長
 ROBOBIKE_COMMAND_NAMES_REQUIRING_VALUE_LEN: Final[int] = len(ROBOBIKE_COMMAND_NAMES_REQUIRING_VALUE)
+# value値(操舵値)の範囲(整数に丸めてこの範囲に収める)
+ROBOBIKE_VALUE_MIN: Final[int] = -100
+ROBOBIKE_VALUE_MAX: Final[int] = 100
+
+# 緊急停止コマンド名(ゲームパッド切断・Publish停止・ノード終了時に送信する)
+ROBOBIKE_EMERGENCY_STOP_COMMAND: Final[str] = "stp_all"
+# 停止系コマンド名リスト(sub_commandで未送信の他コマンドを破棄して優先送信する)
+ROBOBIKE_STOP_COMMAND_NAMES: Final[list[str]] = [
+    "stp_all",
+    "bt_S",
+    "bt_D_St",
+]
 
 
 # ROBOBIKE ステータス CSV インデックスリスト(すべて)

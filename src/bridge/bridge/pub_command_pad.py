@@ -11,7 +11,10 @@ Raspberry Pi 5/Ubuntu Desktop 26.04 LTSにUSBドングル経由で接続され�
 """
 import pygame
 import sys
+from typing import Optional
+
 import rclpy
+from rclpy.signals import SignalHandlerOptions
 
 from .constants import DEBUG
 from .pad_constants import GAMEPAD_ANALOG_CHANGE_THRESHOLD
@@ -24,6 +27,7 @@ from .pad_constants import GAMEPAD_DEV_LETTER
 from .pad_constants import GAMEPAD_VALUE_THRESHOLD
 from .pub_command import CommandPublisher
 from .robobike_utils import get_command_index
+from .robobike_utils import normalize_value
 
 class PadCommandPublisher(CommandPublisher):
     """
@@ -62,7 +66,9 @@ class PadCommandPublisher(CommandPublisher):
             sys.exit(1)
 
         # 指定されたゲームパッドデバイス番号(/dev/input/jsX の X 部分)でジョイスティックを初期化
-        self.joystick = pygame.joystick.Joystick(GAMEPAD_DEV_LETTER)
+        self.joystick: Optional[pygame.joystick.JoystickType] = pygame.joystick.Joystick(
+            GAMEPAD_DEV_LETTER
+        )
 
         # ジョイスティックを初期化
         self.joystick.init()
@@ -123,10 +129,12 @@ class PadCommandPublisher(CommandPublisher):
         command_name = GAMEPAD_AXES_INDEX_TO_COMMAND_MAPPING[axes_index][order]
         if command_name is None:
             return None
-        return {
-            "command_index": get_command_index(command_name),
-            "value": axes_value * 100.0,
-        }
+        command_index = get_command_index(command_name)
+        command_params: dict = {"command_index": command_index}
+        # value値を持つコマンドのみ、軸値(-1.0,1.0)を整数(-100,100)に変換して付与
+        if self.need_value(command_index):
+            command_params["value"] = normalize_value(axes_value * 100.0)
+        return command_params
 
     def create_neutral_joy_status(self) -> dict:
         """
@@ -149,6 +157,22 @@ class PadCommandPublisher(CommandPublisher):
         """比較用のゲームパッド状態を中立状態に戻します。"""
         self.joy_status = self.create_neutral_joy_status()
 
+    def _handle_disconnect(self, message: str) -> None:
+        """
+        ゲームパッド切断時の処理を行います。
+
+        操作中(Publish中)だった場合は緊急停止コマンドを送信してPublishを停止します。
+        再接続後は START/RB を押すまでコマンドを送信しません。
+        """
+        self.joystick = None
+        if self._gamepad_connected:
+            self.get_logger().warning(message)
+            if self.can_publish():
+                self.send_stop_command()
+                self.stop_pub()
+            self._reset_joy_status()
+        self._gamepad_connected = False
+
     def timer_callback(self) -> None:
         try:
             # ゲームパッドの状態を更新する
@@ -156,11 +180,7 @@ class PadCommandPublisher(CommandPublisher):
 
             # ゲームパッドが接続されているか確認
             if not 0 <= GAMEPAD_DEV_LETTER < pygame.joystick.get_count():
-                self.joystick = None
-                if self._gamepad_connected:
-                    self.get_logger().warning("Gamepad disconnected; waiting for reconnection.")
-                    self._reset_joy_status()
-                self._gamepad_connected = False
+                self._handle_disconnect("Gamepad disconnected; waiting for reconnection.")
                 return
 
             if self.joystick is None:
@@ -185,17 +205,10 @@ class PadCommandPublisher(CommandPublisher):
                 for i in range(self.joystick.get_numbuttons())
             ]
         except pygame.error as error:
-            self.joystick = None
-            if self._gamepad_connected:
-                self.get_logger().warning(f"Gamepad disconnected: {error}")
-                self._reset_joy_status()
-            self._gamepad_connected = False
+            self._handle_disconnect(f"Gamepad disconnected: {error}")
             return
         except Exception as error:
-            self.get_logger().error(f"Unexpected error: {error}")
-            self._reset_joy_status()
-            self._gamepad_connected = False
-            self.joystick = None
+            self._handle_disconnect(f"Unexpected error: {error}")
             return
 
         # 現在のゲームパッドの状態を反映したジョイスティックステータスを作成
@@ -266,8 +279,9 @@ class PadCommandPublisher(CommandPublisher):
                     # command_index=0の場合Publish開始指示
                     if current_command_index == 0:
                         self.start_pub()
-                    # command_index=-1の場合Publish停止指示
+                    # command_index=-1の場合Publish停止指示(停止前に緊急停止コマンドを送信)
                     elif current_command_index == -1:
+                        self.send_stop_command()
                         self.stop_pub()
                     # ROBOBIKE上のコマンドの場合、command_value_listに追加
                     else:
@@ -278,8 +292,7 @@ class PadCommandPublisher(CommandPublisher):
                         # value値を持つコマンドかを判定する
                         if self.need_value(current_command_index):
                             # value値が必要→ボタン値範囲が(-1,1)を(-100,100)に変換
-                            current_button_value = int(current_button_value * 100)
-                            command_params["value"] = current_button_value
+                            command_params["value"] = normalize_value(current_button_value * 100)
                         # デバッグログに追加した辞書を出力
                         if DEBUG:
                             self.get_logger().debug(f"Add command params: {command_params}")
@@ -335,27 +348,28 @@ class PadCommandPublisher(CommandPublisher):
             self.get_logger().debug(f"Return command value list(axes): {command_value_list}")
         return command_value_list
 
-    def destroy_node(self) -> None:
-        """
-        ノードを破棄する際に呼ばれるメソッド。
-        """
-        self.stop_pub()
-        super().destroy_node()
-
 def main() -> None:
-    rclpy.init()
-    node = PadCommandPublisher()
-    if DEBUG:
-        print("Debug mode is ON.")
-    print("GamepadPublisher node started.")
-    print("Press Ctrl+C to exit.")
+    # Ctrl+C 後もコンテキストを有効なまま保ち、destroy_node() で緊急停止コマンドを
+    # 送信できるようにするため、rclpy のシグナルハンドラを使わない
+    # (タイマーで定期的に spin が戻るため、Ctrl+C は KeyboardInterrupt として届く)
+    rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
+    node: Optional[PadCommandPublisher] = None
     try:
+        node = PadCommandPublisher()
+        if DEBUG:
+            print("Debug mode is ON.")
+        print("GamepadPublisher node started.")
+        print("Press Ctrl+C to exit.")
         rclpy.spin(node)
     except KeyboardInterrupt:
         print("KeyboardInterrupt received. Exiting...")
     finally:
-        node.destroy_node()
-        rclpy.shutdown()
+        try:
+            if node is not None:
+                # Publish中なら緊急停止コマンドを送信してから破棄する
+                node.destroy_node()
+        finally:
+            rclpy.try_shutdown()
         print("GamepadPublisher node stopped.")
 
 if __name__ == '__main__':

@@ -1,6 +1,8 @@
 """ROBOBIKEのコマンド・ステータス名変換ユーティリティ。"""
 from .constants import ROBOBIKE_COMMAND_NAMES
 from .constants import ROBOBIKE_STATUS_CSV_INDEXES
+from .constants import ROBOBIKE_VALUE_MAX
+from .constants import ROBOBIKE_VALUE_MIN
 
 
 def get_command_index(button: str) -> int:
@@ -29,3 +31,8 @@ def get_status_name(index: int) -> str:
     if index < 0 or index >= len(ROBOBIKE_STATUS_CSV_INDEXES):
         raise ValueError(f"Invalid status index: {index}")
     return ROBOBIKE_STATUS_CSV_INDEXES[index]
+
+
+def normalize_value(value: float) -> int:
+    """value値を整数に丸め、ROBOBIKE_VALUE_MIN〜ROBOBIKE_VALUE_MAXの範囲に収めます。"""
+    return max(ROBOBIKE_VALUE_MIN, min(ROBOBIKE_VALUE_MAX, int(round(value))))

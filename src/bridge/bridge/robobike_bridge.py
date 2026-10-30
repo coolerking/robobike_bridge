@@ -78,7 +78,7 @@ class RobobikeBridge():
         self._latest_telemetry_time: int | None = None
         logger.info(f"Robobike base URL set to: {self.robobike_base_url}")
 
-    def _get_command_url(self, button:str='only_data', value:float=None) -> str:
+    def _get_command_url(self, button:str='only_data', value: float | None = None) -> str:
         """
         Robobike 本番機へのコマンド URL を生成します。
 
@@ -99,7 +99,7 @@ class RobobikeBridge():
 
         return url
 
-    def send_command(self, button:str='only_data', value:float=None) -> dict:
+    def send_command(self, button:str='only_data', value: float | None = None) -> dict:
         """
         Robobike 本番機にコマンドを送信します。
 
@@ -360,7 +360,7 @@ class RobobikeBridge():
 def test_robobike_bridge() -> None:
     # ダミーを使うかどうかを指定する引数を処理して、IPアドレスを決定する
     parser = argparse.ArgumentParser(
-        prog="pub_robobike",
+        prog="robobike_bridge",
         description="Publish data from a WiFi-connected ROBOBIKE"
     )
     parser.add_argument(

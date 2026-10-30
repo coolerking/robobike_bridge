@@ -31,10 +31,10 @@ setup(
             'pub_command_policy = bridge.pub_command_policy:main',
             'sub_command = bridge.sub_command:main',
             'sub_image = bridge.sub_image:main',
-            'pub_robobike = bridge.pub_robobike:main',
-            'sub_robobike = bridge.sub_robobike:main',
             'pub_status = bridge.pub_status:main',
             'pub_telemetry = bridge.pub_telemetry:main',
+            'sub_status = bridge.sub_status:main',
+            'sub_telemetry = bridge.sub_telemetry:main',
         ],
     },
 )
