@@ -43,7 +43,7 @@ from .constants import ROBOBIKE_STATUS_CSV_INDEXES_FLOAT
 # ステータスデータ(command="only_data"戻り値)の int 値の項目インデックス
 from .constants import ROBOBIKE_STATUS_CSV_INDEXES_INT
 # ステータスデータ インデックス番号←→項目名の変換用関数
-from .constants import get_command_index, get_status_name
+from .robobike_utils import get_command_index, get_status_name
 
 # テレメトリデータ(get_acc戻り値)項目数
 from .constants import ROBOBIKE_TELEMETRY_CSV_INDEXES_LEN

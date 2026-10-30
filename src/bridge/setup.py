@@ -27,7 +27,8 @@ setup(
         'console_scripts': [
             'dummybike = bridge.dummybike:run_dummy_bike',
             'pub_image = bridge.pub_image:main',
-            'pub_command = bridge.pub_command:main',
+            'pub_command_pad = bridge.pub_command_pad:main',
+            'pub_command_policy = bridge.pub_command_policy:main',
             'sub_image = bridge.sub_image:main',
             'pub_robobike = bridge.pub_robobike:main',
             'sub_robobike = bridge.sub_robobike:main',

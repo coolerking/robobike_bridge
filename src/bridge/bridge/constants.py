@@ -13,6 +13,9 @@ DEBUG: Final[bool] = True
 TOPICNAME_IMAGE: Final[str] = 'camera_image'
 # トピック名(Joy用)
 TOPICNAME_JOY: Final[str] = 'joy'
+# トピック名(ROBOBIKE /command)
+TOPICNAME_ROBOBIKE_COMMAND: Final[str] = 'robobike_command'
+
 
 # QoS設定
 QOS_PROFILE: Final[QoSProfile] = QoSProfile(depth=10)
@@ -23,16 +26,6 @@ IMAGE_ENCODING_TYPE: Final[str] = 'bgr8'
 CAMERA_DEV_LETTER: Final[int] = 0  # /dev/video0
 #CAMERA_DEV_LETTER: Final[int] = 1  # /dev/video1
 
-
-# ゲームパッドデバイスの番号(/dev/input/jsX の X 部分)
-GAMEPAD_DEV_LETTER: Final[int] = 0  # /dev/input/js0
-#GAMEPAD_DEV_LETTER: Final[int] = 1  # /dev/input/js1
-
-# ゲームパッド入力チェックの間隔
-GAMEPAD_CHECK_INTERVAL_SEC: Final[float] = 0.1  # ゲームパッド入力チェックの間隔(秒)
-
-# ゲームパッドアナログ値変化有無を判断する閾値
-GAMEPAD_ANALOG_CHANGE_THRESHOLD: Final[float] = 0.05
 
 # Publish間隔(秒)
 PUBLISH_INTERVAL_SEC: Final[float] = 0.05
@@ -96,36 +89,15 @@ ROBOBIKE_COMMAND_NAMES: Final[list[str]] = [
 ]
 ROBOBIKE_COMMAND_NAMES_LEN: Final[int] = len(ROBOBIKE_COMMAND_NAMES)
 
-"""
-コマンド名をインデックス番号に変換する
-
-Args:
-    button (str): コマンド名(ROBOBIKE_COMMAND_NAMES に含まれるいずれかの要素)。
-
-Returns:
-    int: コマンド名に対応するインデックス番号(1,2,3,...)
-"""
-def get_command_index(button: str) -> int:
-    if button not in ROBOBIKE_COMMAND_NAMES:
-        raise ValueError(f"Invalid button name: {button}")
-    return ROBOBIKE_COMMAND_NAMES.index(button) + 1
-
-"""
-コマンド番号をコマンド名に変換する
-
-Args:
-    index (int): コマンド番号(1,2,3,...)。
-
-Returns:
-    str: コマンド番号に対応するコマンド名。
-"""
-def get_command_name(index: int) -> str:
-    if index < 1 or index > ROBOBIKE_COMMAND_NAMES_LEN:
-        raise ValueError(f"Invalid command index: {index}")
-    return ROBOBIKE_COMMAND_NAMES[index - 1]
+# value値を必要とするコマンド名リスト
+ROBOBIKE_COMMAND_NAMES_REQUIRING_VALUE: Final[list[str]] = [
+    "bt_Str_S",
+]
+# value値を必要とするコマンド名リスト長
+ROBOBIKE_COMMAND_NAMES_REQUIRING_VALUE_LEN: Final[int] = len(ROBOBIKE_COMMAND_NAMES_REQUIRING_VALUE)
 
 
-"""ROBOBIKE ステータス CSV インデックスリスト(すべて)"""
+# ROBOBIKE ステータス CSV インデックスリスト(すべて)
 ROBOBIKE_STATUS_CSV_INDEXES: Final[list[str]] = [
     "b",                 # 固定 "b"が必ず帰る
     "PROGVER",           # Robobike実機プログラムのバージョン
@@ -145,9 +117,10 @@ ROBOBIKE_STATUS_CSV_INDEXES: Final[list[str]] = [
     "auto_circ_gain",    # 自動旋回ゲイン(例:0.750)
     "doSweep"            # スイープ動作(例:0)
 ]
+# ROBOBIKE ステータス CSV インデックスリスト長
 ROBOBIKE_STATUS_CSV_INDEXES_LEN: Final[int] = len(ROBOBIKE_STATUS_CSV_INDEXES)
 
-"""ROBOBIKE ステータス CSV インデックスリスト(float値をとるもの)"""
+# ROBOBIKE ステータス CSV インデックスリスト(float値をとるもの)
 ROBOBIKE_STATUS_CSV_INDEXES_FLOAT: Final[list[str]] = [
     "gain_str",          # ステアリングゲイン(例:0.030)
     "gain_w_roll",       # ロール方向のゲイン(例:12.000)
@@ -171,34 +144,6 @@ ROBOBIKE_STATUS_CSV_INDEXES_INT: Final[list[str]] = [
     "doSweep"            # スイープ動作(例:0)
 ]
 ROBOBIKE_STATUS_CSV_INDEXES_INT_LEN: Final[int] = len(ROBOBIKE_STATUS_CSV_INDEXES_INT)
-
-"""
-ステータス名をインデックス番号に変換する
-
-Args:
-    status (str): ステータス名(ROBOBIKE_STATUS_CSV_INDEXES に含まれるいずれかの要素)。
-
-Returns:
-    int: ステータス名に対応するインデックス番号(0,1,2,...)
-"""
-def get_status_index(status: str) -> int:
-    if status not in ROBOBIKE_STATUS_CSV_INDEXES:
-        raise ValueError(f"Invalid status name: {status}")
-    return ROBOBIKE_STATUS_CSV_INDEXES.index(status)
-
-"""
-ステータスインデックス番号をステータス名に変換する
-
-Args:
-    index (int): ステータスインデックス番号(0,1,2,...)。
-
-Returns:
-    str: インデックス番号に対応するステータス名。
-"""
-def get_status_name(index: int) -> str:
-    if index < 0 or index >= len(ROBOBIKE_STATUS_CSV_INDEXES):
-        raise ValueError(f"Invalid status index: {index}")
-    return ROBOBIKE_STATUS_CSV_INDEXES[index]
 
 """ROBOBIKE テレメトリ CSV インデックスリスト(すべて)"""
 ROBOBIKE_TELEMETRY_CSV_INDEXES: Final[list[str]] = [
