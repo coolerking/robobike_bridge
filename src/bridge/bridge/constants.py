@@ -3,6 +3,8 @@
 
 ROS2 bridge パッケージ内の定数を定義するファイル
 """
+import os
+from pathlib import Path
 from typing import Final
 from rclpy.qos import QoSProfile
 
@@ -39,6 +41,21 @@ HTTP_TIMEOUT_SEC: Final[float] = 1.0
 
 # テレメトリ平均化対象の時間幅(ミリ秒)
 TELEMETRY_WINDOW_MSEC: Final[int] = 100
+
+
+# 学習データ・ログ・モデルの保存先ルート(環境変数 ROBOBIKE_DATA_DIR で上書き可)
+DATA_ROOT_ENV_NAME: Final[str] = 'ROBOBIKE_DATA_DIR'
+DATA_ROOT: Final[Path] = Path(
+    os.environ.get(DATA_ROOT_ENV_NAME, Path.home() / 'robobike_data')
+).expanduser().resolve()
+# 収集データ(ros2 bag 等、未加工のまま保存)
+DATA_RAW_DIR: Final[Path] = DATA_ROOT / 'raw'
+# 変換後の学習用データセット
+DATA_DATASETS_DIR: Final[Path] = DATA_ROOT / 'datasets'
+# 学習1回ごとのログ・checkpoint・設定
+DATA_RUNS_DIR: Final[Path] = DATA_ROOT / 'runs'
+# 推論用に書き出した学習済みモデル
+DATA_MODELS_DIR: Final[Path] = DATA_ROOT / 'models'
 
 
 # ROBOBIKE IPアドレス
