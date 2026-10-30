@@ -68,11 +68,8 @@ class ImagePublisher(Node):
             # 実際のカメラを使用
             self.cap = cv2.VideoCapture(CAMERA_DEV_LETTER)
             try:
-                # カメラ側で縮小できる場合は縮小しておく(できない場合は送信前にリサイズする)
-                self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMAGE_WIDTH)
-                self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMAGE_HEIGHT)
-                # 古いフレームがバッファに溜まって遅延しないようにする
-                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                # カメラ側の解像度は変更しない(非対応の解像度を指定すると GStreamer の
+                # パイプラインが起動できなくなるため)。縮小は送信前に行う。
                 ret, _ = self.cap.read()
                 if not ret:
                     self.get_logger().error('Failed to take a picture with cv2')
