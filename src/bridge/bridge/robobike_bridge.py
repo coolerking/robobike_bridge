@@ -117,10 +117,10 @@ class RobobikeBridge():
         try:
             with urlopen(url, timeout=HTTP_TIMEOUT_SEC) as response:
                 csv_str = response.read().decode('utf-8')
-                print(csv_str)
+                #print(csv_str)
                 # CSV をパースしてリストに変換
                 csv_list = csv_str.strip().split(',')
-                print(csv_list)
+                #print(csv_list)
                 csv_dict = {}
                 if len(csv_list) == ROBOBIKE_STATUS_CSV_INDEXES_LEN:
                     for i in range(ROBOBIKE_STATUS_CSV_INDEXES_LEN):
@@ -281,7 +281,21 @@ class RobobikeBridge():
                 )
                 # ゼロ件リストにする
                 self._telemetry_history.clear()
-            
+                self._latest_telemetry_time = None
+
+            # 前回取得済みの時刻以前の行は捨てる(再送による重複防止)
+            if self._latest_telemetry_time is not None:
+                telemetry = [
+                    sample for sample in telemetry
+                    if (
+                        isinstance(sample['time'], int)
+                        and sample['time'] > self._latest_telemetry_time
+                    )
+                ]
+                # 新規データがなければ履歴を再送せずNoneを返す
+                if not telemetry:
+                    return None
+
             # ウィンドウの開始時刻を計算
             window_start = latest_time - TELEMETRY_WINDOW_MSEC
             # ウィンドウ範囲内のsampleを抽出

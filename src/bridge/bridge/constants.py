@@ -12,9 +12,13 @@ DEBUG: Final[bool] = True
 # トピック名(カメラ画像用)
 TOPICNAME_IMAGE: Final[str] = 'camera_image'
 # トピック名(Joy用)
-TOPICNAME_JOY: Final[str] = 'joy'
+#TOPICNAME_JOY: Final[str] = 'joy'
 # トピック名(ROBOBIKE /command)
 TOPICNAME_ROBOBIKE_COMMAND: Final[str] = 'robobike_command'
+# トピック名(ROBOBIKE /status)
+TOPICNAME_ROBOBIKE_STATUS: Final[str] = 'robobike_status'
+# トピック名(ROBOBIKE /get_acc)
+TOPICNAME_ROBOBIKE_TELEMETRY: Final[str] = 'robobike_telemetry'
 
 
 # QoS設定
