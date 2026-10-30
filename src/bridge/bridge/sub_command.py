@@ -15,9 +15,16 @@ ROBOBIKEへのHTTP送信は受信コールバックとは別の送信スレッ�
 停止系コマンドの送信に失敗した場合は最大 STOP_COMMAND_MAX_RETRIES 回まで再送する
 (新しい停止系コマンドが届いた場合は再送をやめてそちらを送信する)。
 
+--watchdog を指定した場合は、方策(pub_command_policy)のハートビートを監視する。
+最初のハートビートを受信した時点で監視を開始し、指定秒数ハートビートが途絶えたら
+緊急停止コマンドを送信して、次のハートビートを受信するまで監視を止める。
+ハートビートを一度も受信しない間(ゲームパッドのみで操作する場合など)は何もしない。
+
 実行例:
     ros2 run bridge sub_command --dummy --ros-args -r __node:=bike_test # ダミーデータでの実行
     ros2 run bridge sub_command --ros-args -r __node:=bike_test # 実機データでの実行
+    ros2 run bridge sub_command --watchdog # 方策実行時(ハートビート途絶0.5秒で緊急停止)
+    ros2 run bridge sub_command --watchdog 1.0 # 方策実行時(タイムアウト秒数を指定)
 """
 import sys
 import json
@@ -30,14 +37,19 @@ from typing import Optional
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from std_msgs.msg import Header
 from std_msgs.msg import String
 from rclpy.utilities import remove_ros_args
 from .robobike_bridge import RobobikeBridge
 
+from .constants import HEARTBEAT_QOS_PROFILE
 from .constants import QOS_PROFILE
 from .constants import ROBOBIKE_DUMMY_IP
+from .constants import ROBOBIKE_EMERGENCY_STOP_COMMAND
 from .constants import ROBOBIKE_STOP_COMMAND_NAMES
+from .constants import TOPICNAME_POLICY_HEARTBEAT
 from .constants import TOPICNAME_ROBOBIKE_COMMAND
+from .constants import WATCHDOG_DEFAULT_TIMEOUT_SEC
 from .pub_command import CommandPublisher
 from .robobike_utils import get_command_name
 from .robobike_utils import normalize_value
@@ -46,6 +58,8 @@ from .robobike_utils import normalize_value
 MAX_PENDING_COMMANDS = 20
 # 停止系コマンド送信失敗時の最大再送回数(停止系コマンドは何度送っても結果が同じため再送できる)
 STOP_COMMAND_MAX_RETRIES = 3
+# ウォッチドッグのタイムアウト判定回数(タイムアウト時間あたり)
+WATCHDOG_CHECKS_PER_TIMEOUT = 5
 
 
 class PendingCommand:
@@ -65,7 +79,7 @@ class RobobikeCommandSubscriber(Node):
     TOPICNAME_ROBOBIKE_COMMAND トピックを購読し、
     受信した内容をROBOBIKE操作系コマンドに変換して送信スレッドに渡す。
     """
-    def __init__(self, test:bool=False):
+    def __init__(self, test:bool=False, watchdog_timeout_sec: Optional[float]=None):
         """
         RobobikeCommandSubscriber クラスの初期化処理
 
@@ -73,6 +87,8 @@ class RobobikeCommandSubscriber(Node):
 
         Args:
             test (bool): ダミーデータを使用するかどうか
+            watchdog_timeout_sec (Optional[float]): 方策ハートビートのタイムアウト(秒)。
+                None の場合はウォッチドッグを使用しない。
         """
         super().__init__('robobike_command_subscriber_node')
 
@@ -95,7 +111,58 @@ class RobobikeCommandSubscriber(Node):
             QOS_PROFILE
         )
 
+        # ウォッチドッグ(方策ハートビート監視)
+        self._watchdog_timeout_sec = watchdog_timeout_sec
+        # 最後にハートビートを受信した時刻(None の場合は監視していない)
+        self._last_heartbeat_at: Optional[float] = None
+        if watchdog_timeout_sec is not None:
+            self.heartbeat_subscription = self.create_subscription(
+                Header,
+                TOPICNAME_POLICY_HEARTBEAT,
+                self.receive_heartbeat,
+                HEARTBEAT_QOS_PROFILE
+            )
+            self.watchdog_timer = self.create_timer(
+                watchdog_timeout_sec / WATCHDOG_CHECKS_PER_TIMEOUT,
+                self.check_heartbeat
+            )
+            self.get_logger().info(
+                f'Watchdog enabled (timeout: {watchdog_timeout_sec} s); '
+                'waiting for policy heartbeat.'
+            )
+
         self.get_logger().info('RobobikeCommandSubscriber initialized successfully.')
+
+    def receive_heartbeat(self, msg: Header) -> None:
+        """
+        方策のハートビートを受信し、ウォッチドッグの監視を開始・継続します。
+
+        時刻の比較には受信側の monotonic 時刻を使用します
+        (送信側とのクロックのずれの影響を受けないようにするため)。
+
+        Args:
+            msg (std_msgs.msg.Header): 受信したハートビート
+        """
+        if self._last_heartbeat_at is None:
+            self.get_logger().info(f'Policy heartbeat received from {msg.frame_id!r}; watchdog armed.')
+        self._last_heartbeat_at = time.monotonic()
+
+    def check_heartbeat(self) -> None:
+        """
+        ハートビートの途絶を判定し、タイムアウトした場合は緊急停止コマンドを送信します。
+
+        緊急停止後は次のハートビートを受信するまで監視を止めます。
+        """
+        if self._last_heartbeat_at is None or self._watchdog_timeout_sec is None:
+            return
+        elapsed = time.monotonic() - self._last_heartbeat_at
+        if elapsed > self._watchdog_timeout_sec:
+            self.get_logger().error(
+                f'Policy heartbeat lost for {elapsed:.2f} s; '
+                f'sending {ROBOBIKE_EMERGENCY_STOP_COMMAND} (watchdog disarmed until next heartbeat).'
+            )
+            self._last_heartbeat_at = None
+            self._enqueue(PendingCommand(ROBOBIKE_EMERGENCY_STOP_COMMAND, None))
 
     def receive_command(self, msg: String) -> None:
         """
@@ -255,14 +322,25 @@ def main():
         '--dummy',
         action='store_true',
         help='Use dummy data instead of the real ROBOBIKE')
+    parser.add_argument(
+        '--watchdog',
+        type=float,
+        nargs='?',
+        const=WATCHDOG_DEFAULT_TIMEOUT_SEC,
+        default=None,
+        metavar='TIMEOUT_SEC',
+        help='Send emergency stop when policy heartbeat is lost for TIMEOUT_SEC '
+             f'(default when specified: {WATCHDOG_DEFAULT_TIMEOUT_SEC})')
     app_args = remove_ros_args(args=sys.argv)[1:]
     args = parser.parse_args(app_args)
+    if args.watchdog is not None and not (math.isfinite(args.watchdog) and args.watchdog > 0):
+        parser.error('--watchdog TIMEOUT_SEC must be a positive number')
 
-    print(f'[main] start subscriber test:{str(args.dummy)}')
+    print(f'[main] start subscriber test:{str(args.dummy)} watchdog:{args.watchdog}')
     rclpy.init()
     node: Optional[RobobikeCommandSubscriber] = None
     try:
-        node = RobobikeCommandSubscriber(test=args.dummy)
+        node = RobobikeCommandSubscriber(test=args.dummy, watchdog_timeout_sec=args.watchdog)
         rclpy.spin(node)
     except (KeyboardInterrupt, ExternalShutdownException):
         print('[main] Interrupt received')

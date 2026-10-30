@@ -10,7 +10,7 @@ Robobike のモータ速度(mot_spd)を目標値に調整する
 """
 import argparse
 import time
-from typing import Final
+from typing import Final, Optional
 
 from .robobike_bridge import RobobikeBridge
 # ROBOBIKE 実機 IPアドレス
@@ -28,12 +28,12 @@ MAX_ITERATIONS: Final[int] = 100
 COMMAND_INTERVAL_SEC: Final[float] = 1.0
 
 
-def _get_mot_spd(status: dict) -> int:
+def _get_mot_spd(status: Optional[dict]) -> int:
     """
     ステータス辞書から mot_spd を取り出します。
 
     Args:
-        status (dict): send_command()/get_status() の戻り値
+        status (Optional[dict]): send_command()/get_status() の戻り値
 
     Returns:
         int: mot_spd の値
@@ -41,6 +41,8 @@ def _get_mot_spd(status: dict) -> int:
     Raises:
         RuntimeError: 通信エラー、または mot_spd が取得できない場合
     """
+    if status is None:
+        raise RuntimeError('Failed to get status from Robobike: no response')
     if status.get('status') == 'error':
         raise RuntimeError(f"Failed to get status from Robobike: {status.get('error')}")
     mot_spd = status.get('mot_spd')

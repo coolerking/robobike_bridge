@@ -22,10 +22,19 @@ TOPICNAME_ROBOBIKE_COMMAND: Final[str] = 'robobike_command'
 TOPICNAME_ROBOBIKE_STATUS: Final[str] = 'robobike_status'
 # トピック名(ROBOBIKE /get_acc)
 TOPICNAME_ROBOBIKE_TELEMETRY: Final[str] = 'robobike_telemetry'
+# トピック名(方策ハートビート、std_msgs/Header)
+TOPICNAME_POLICY_HEARTBEAT: Final[str] = 'robobike_policy_heartbeat'
 
 
 # QoS設定
 QOS_PROFILE: Final[QoSProfile] = QoSProfile(depth=10)
+
+# 方策ハートビート用QoS設定(BEST_EFFORT：遅れて再送されたハートビートは意味がないため)
+HEARTBEAT_QOS_PROFILE: Final[QoSProfile] = qos_profile_sensor_data
+# 方策の制御周期(秒)：ROBOBIKEのHTTP往復(約80ms)に合わせて10Hz、ハートビートもこの周期で送る
+POLICY_CONTROL_INTERVAL_SEC: Final[float] = 0.1
+# ウォッチドッグのデフォルトタイムアウト(秒)：この時間ハートビートが途絶えたら緊急停止する
+WATCHDOG_DEFAULT_TIMEOUT_SEC: Final[float] = 0.5
 
 # カメラ画像用QoS設定(BEST_EFFORT：WiFi越しに1枚落ちても再送せず次のフレームを待つ)
 IMAGE_QOS_PROFILE: Final[QoSProfile] = qos_profile_sensor_data
