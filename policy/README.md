@@ -19,7 +19,7 @@ ROS2 パッケージではないため `COLCON_IGNORE` を置いています(Ras
 | `.venv-train` | 3.12(uv で作成) | 学習(`lerobot-train`) |
 
 `lerobot-train` や `ACTPolicy.from_pretrained()` が使う draccus は Python 3.14 に未対応のため、
-学習は 3.12 で行い、3.14 側でのモデル読み込みは `act_loader.py` を使います。
+学習は 3.12 で行い、3.14 側でのモデル読み込みは `bridge/act_loader.py` を使います。
 
 ```bash
 # .venv(ROS2 のパッケージを参照するため --system-site-packages)
@@ -71,9 +71,26 @@ source /opt/ros/lyrical/setup.bash && source install/setup.bash
   --wandb.enable=false --output_dir=$HOME/robobike_data/runs/<実行名>
 ```
 
-### 5. 推論用モデルの読み込み(.venv)
+### 5. 方策で走行(Raspberry Pi ＋ PC の .venv)
 
-```python
-from act_loader import load_act_policy
-policy, preprocessor, postprocessor = load_act_policy('~/robobike_data/runs/<実行名>/checkpoints/last/pretrained_model')
+Raspberry Pi でウォッチドッグ付きで起動します(記録もされるので評価に使えます)。
+
+```bash
+ros2 launch bridge collect.launch.py watchdog:=true
 ```
+
+PC で推論ノードを起動します(colcon でビルドした bridge を .venv の Python で実行)。
+
+```bash
+source /opt/ros/lyrical/setup.bash && source install/setup.bash
+.venv/bin/python -m bridge.pub_command_policy \
+  --model ~/robobike_data/runs/<実行名>/checkpoints/last/pretrained_model
+```
+
+- ゲームパッドの START で方策の操舵を開始、BACK/LB で停止します。速度はスティック上下で人が操作します
+- 操舵中に画像・テレメトリ・ステータスが 0.5 秒途絶えると操舵を停止し、ウォッチドッグが緊急停止します
+  (再開は START)
+- `--n_action_steps` で1回の推論で実行するステップ数を変えられます(デフォルト 10 = 1秒分)
+- `--autostart` で START を待たずに操舵を開始します(ゲームパッドなしのテスト用)
+
+モデルの読み込みは `bridge.act_loader.load_act_policy()` で行います(draccus を使わないため 3.14 で動く)。

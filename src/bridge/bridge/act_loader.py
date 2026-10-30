@@ -9,7 +9,10 @@ draccus は Python 3.14(ROS2 Lyrical の Python)の argparse に対応してい�
 (学習は Python 3.12 の .venv-train で lerobot-train を使い、推論は ROS2 と同じ
  Python 3.14 の .venv でこのモジュールを使う)
 
+lerobot・torch が必要なため PC の .venv でのみ使います(Raspberry Pi では import しない)。
+
 使用例:
+    from bridge.act_loader import load_act_policy
     policy, preprocessor, postprocessor = load_act_policy(path)
     action = postprocessor(policy.select_action(preprocessor(batch)))
 """
@@ -33,13 +36,19 @@ def _to_features(raw: dict[str, Any]) -> dict[str, PolicyFeature]:
     }
 
 
-def load_act_policy(path: str | Path, device: Optional[str] = None) -> tuple[ACTPolicy, Any, Any]:
+def load_act_policy(
+    path: str | Path,
+    device: Optional[str] = None,
+    n_action_steps: Optional[int] = None,
+) -> tuple[ACTPolicy, Any, Any]:
     """
     ACT の checkpoint を読み込みます。
 
     Args:
         path (str | Path): pretrained_model ディレクトリ(config.json と model.safetensors がある場所)
         device (Optional[str]): 推論に使うデバイス('cuda'/'cpu')。None の場合は学習時の設定
+        n_action_steps (Optional[int]): 1回の推論で予測した行動列(chunk_size)のうち実行する
+            ステップ数。None の場合は学習時の設定
 
     Returns:
         tuple[ACTPolicy, Any, Any]: (評価モードの方策, 前処理パイプライン, 後処理パイプライン)
@@ -60,6 +69,8 @@ def load_act_policy(path: str | Path, device: Optional[str] = None) -> tuple[ACT
     kwargs['pretrained_backbone_weights'] = None
     if device is not None:
         kwargs['device'] = device
+    if n_action_steps is not None:
+        kwargs['n_action_steps'] = n_action_steps
     config = ACTConfig(**kwargs)
 
     policy = ACTPolicy(config)

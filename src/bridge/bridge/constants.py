@@ -41,6 +41,12 @@ HEARTBEAT_QOS_PROFILE: Final[QoSProfile] = qos_profile_sensor_data
 POLICY_CONTROL_INTERVAL_SEC: Final[float] = 0.1
 # ウォッチドッグのデフォルトタイムアウト(秒)：この時間ハートビートが途絶えたら緊急停止する
 WATCHDOG_DEFAULT_TIMEOUT_SEC: Final[float] = 0.5
+# 方策入力(画像・テレメトリ・ステータス)の有効期間(秒)：これより古い入力しかない場合は推論しない
+POLICY_INPUT_TIMEOUT_SEC: Final[float] = 0.5
+# 方策が前回送信値からこの値(-100〜100 の単位)以上変化した場合のみ操舵コマンドを送信する
+POLICY_STEER_CHANGE_THRESHOLD: Final[int] = 5
+# ACT が予測した行動列のうち、次の推論までに実行するステップ数(10 = 1秒分)
+POLICY_DEFAULT_N_ACTION_STEPS: Final[int] = 10
 
 # カメラ画像用QoS設定(BEST_EFFORT：WiFi越しに1枚落ちても再送せず次のフレームを待つ)
 IMAGE_QOS_PROFILE: Final[QoSProfile] = qos_profile_sensor_data
