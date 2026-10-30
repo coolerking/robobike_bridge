@@ -7,12 +7,13 @@ import os
 from pathlib import Path
 from typing import Final
 from rclpy.qos import QoSProfile
+from rclpy.qos import qos_profile_sensor_data
 
 # デバッグフラグ
 DEBUG: Final[bool] = True
 
-# トピック名(カメラ画像用)
-TOPICNAME_IMAGE: Final[str] = 'camera_image'
+# トピック名(カメラ画像用、JPEG圧縮した sensor_msgs/CompressedImage)
+TOPICNAME_IMAGE: Final[str] = 'camera_image/compressed'
 # トピック名(Joy用)
 #TOPICNAME_JOY: Final[str] = 'joy'
 # トピック名(ROBOBIKE /command)
@@ -26,8 +27,21 @@ TOPICNAME_ROBOBIKE_TELEMETRY: Final[str] = 'robobike_telemetry'
 # QoS設定
 QOS_PROFILE: Final[QoSProfile] = QoSProfile(depth=10)
 
-# カメラ画像エンコーディングタイプ
+# カメラ画像用QoS設定(BEST_EFFORT：WiFi越しに1枚落ちても再送せず次のフレームを待つ)
+IMAGE_QOS_PROFILE: Final[QoSProfile] = qos_profile_sensor_data
+
+# カメラ画像エンコーディングタイプ(JPEG圧縮前/展開後のOpenCV画像)
 IMAGE_ENCODING_TYPE: Final[str] = 'bgr8'
+# カメラ画像の配信サイズ(WiFi帯域に収めるため縮小する)
+IMAGE_WIDTH: Final[int] = 320
+IMAGE_HEIGHT: Final[int] = 240
+# カメラ画像のJPEG圧縮形式・品質(0-100)
+IMAGE_COMPRESSED_FORMAT: Final[str] = 'jpeg'
+IMAGE_JPEG_QUALITY: Final[int] = 80
+# カメラ画像のPublish間隔(秒)：ROBOBIKEのHTTP往復(約80ms)に合わせて10Hz
+IMAGE_PUBLISH_INTERVAL_SEC: Final[float] = 0.1
+# カメラ画像の frame_id
+IMAGE_FRAME_ID: Final[str] = 'overhead_camera'
 #カメラデバイスの番号(/dev/videoX の X 部分)
 CAMERA_DEV_LETTER: Final[int] = 0  # /dev/video0
 #CAMERA_DEV_LETTER: Final[int] = 1  # /dev/video1
