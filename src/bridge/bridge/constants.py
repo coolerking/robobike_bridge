@@ -61,10 +61,10 @@ ROBOBIKE_COMMAND_NAMES: Final[list[str]] = [
     "bt_R",             #  6: 停止したまま右一杯
     "bt_Str_S",         #  7: ステアリング値を送信するコマンド(valueで (-100<LEFT>, 100<RIGHT>)の範囲で指定)
     "bt_BK",            #  8: 連続後進
-    "bt_A_Up_0",        #  9: モータ速度(mot_std)+1
-    "bt_A_Dn_0",        # 10: モータ速度(mot_std)-1
-    "bt_A_Up",          # 11: モータ速度(mot_std)+1で連続前進(ステアリング角維持)
-    "bt_A_Dn",          # 12: モータ速度(mot_std)-1で連続前進(ステアリング角維持)
+    "bt_A_Up_0",        #  9: モータ速度(mot_spd)+1
+    "bt_A_Dn_0",        # 10: モータ速度(mot_spd)-1
+    "bt_A_Up",          # 11: モータ速度(mot_spd)+1で連続前進(ステアリング角維持)
+    "bt_A_Dn",          # 12: モータ速度(mot_spd)-1で連続前進(ステアリング角維持)
     "bt_A_L",           # 13: ステアリング標準位置(str0)-1
     "bt_A_R",           # 14: ステアリング標準位置(str0)+1
     "bt_S_Up",          # 15: ステアリング感度(gain_str)+0.01

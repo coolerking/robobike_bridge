@@ -35,6 +35,7 @@ setup(
             'pub_telemetry = bridge.pub_telemetry:main',
             'sub_status = bridge.sub_status:main',
             'sub_telemetry = bridge.sub_telemetry:main',
+            'calibration = bridge.calibration:main',
         ],
     },
 )
