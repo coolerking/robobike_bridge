@@ -36,6 +36,7 @@ setup(
             'sub_status = bridge.sub_status:main',
             'sub_telemetry = bridge.sub_telemetry:main',
             'calibration = bridge.calibration:main',
+            'record_session = bridge.record_session:main',
         ],
     },
 )

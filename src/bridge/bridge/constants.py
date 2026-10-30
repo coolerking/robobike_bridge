@@ -24,6 +24,12 @@ TOPICNAME_ROBOBIKE_STATUS: Final[str] = 'robobike_status'
 TOPICNAME_ROBOBIKE_TELEMETRY: Final[str] = 'robobike_telemetry'
 # トピック名(方策ハートビート、std_msgs/Header)
 TOPICNAME_POLICY_HEARTBEAT: Final[str] = 'robobike_policy_heartbeat'
+# トピック名(学習データ収集用エピソード開始/終了イベント、std_msgs/String の JSON)
+TOPICNAME_ROBOBIKE_EPISODE: Final[str] = 'robobike_episode'
+
+# エピソードイベント種別(robobike_episode の "event" の値)
+EPISODE_EVENT_START: Final[str] = 'start'
+EPISODE_EVENT_END: Final[str] = 'end'
 
 
 # QoS設定
@@ -79,6 +85,17 @@ DATA_DATASETS_DIR: Final[Path] = DATA_ROOT / 'datasets'
 DATA_RUNS_DIR: Final[Path] = DATA_ROOT / 'runs'
 # 推論用に書き出した学習済みモデル
 DATA_MODELS_DIR: Final[Path] = DATA_ROOT / 'models'
+
+# ros2 bag で記録するトピック(学習データ収集用)
+RECORD_TOPICS: Final[list[str]] = [
+    TOPICNAME_IMAGE,
+    TOPICNAME_ROBOBIKE_STATUS,
+    TOPICNAME_ROBOBIKE_TELEMETRY,
+    TOPICNAME_ROBOBIKE_COMMAND,
+    TOPICNAME_ROBOBIKE_EPISODE,
+]
+# ros2 bag の保存形式
+RECORD_STORAGE_ID: Final[str] = 'mcap'
 
 
 # ROBOBIKE IPアドレス

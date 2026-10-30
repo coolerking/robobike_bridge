@@ -58,3 +58,4 @@ tmp/
 
 # Python venv (LeRobot/torch など学習・推論用)
 .venv/
+.venv-train/

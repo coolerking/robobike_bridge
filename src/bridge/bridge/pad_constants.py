@@ -4,15 +4,21 @@ GAMEPAD_CHECK_INTERVAL_SEC: float = 0.1
 GAMEPAD_ANALOG_CHANGE_THRESHOLD: float = 0.05
 GAMEPAD_VALUE_THRESHOLD: float = 0.3
 
+# ボタンに割り当てる特殊操作(ROBOBIKEコマンド番号は1以上なので0以下を使う)
+GAMEPAD_ACTION_PUBLISH_START: int = 0    # Publish開始
+GAMEPAD_ACTION_PUBLISH_STOP: int = -1    # Publish停止(緊急停止コマンド送信)
+GAMEPAD_ACTION_EPISODE_START: int = -2   # Publish開始＋エピソード開始
+GAMEPAD_ACTION_EPISODE_END: int = -3     # Publish停止(緊急停止コマンド送信)＋エピソード終了
+
 GAMEPAD_BUTTON_INDEX_TO_COMMAND_MAPPING: list[str | int] = [
     "bt_S",    # 0:A
     "stp_all", # 1:B
     "bt_F",    # 2:X
     "bt_BK",   # 3:Y
-    -1,         # 4: LB    Publish Stop
-    0,          # 5: RB    Publish Start
-    -1,         # 6: BACK  Publish Stop
-    0,          # 7: START Publish Start
+    GAMEPAD_ACTION_PUBLISH_STOP,   # 4: LB    Publish Stop
+    GAMEPAD_ACTION_PUBLISH_START,  # 5: RB    Publish Start
+    GAMEPAD_ACTION_EPISODE_END,    # 6: BACK  Publish Stop + Episode End
+    GAMEPAD_ACTION_EPISODE_START,  # 7: START Publish Start + Episode Start
     "stp_all", # 8: GUIDE(13)
     "bt_D_St", # 9: Left Stick(9)
     "bt_D_St", # 10: Right Stick(10)

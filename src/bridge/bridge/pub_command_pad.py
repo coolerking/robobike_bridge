@@ -5,18 +5,30 @@
 Raspberry Pi 5/Ubuntu Desktop 26.04 LTSにUSBドングル経由で接続された
 ゲームパッドをテレオペ操作用デバイスにするためのモジュールです。
 ゲームパッド操作をROBOBIKEのコマンド操作に変換して送信します。
+START/BACK ボタンでは学習データ収集用のエピソード開始/終了イベントも送信します
+(RB/LB はエピソードを開始せずにPublishの開始/停止のみ行う)。
 
 実行例：
     ros2 run bridge pub_command_pad # 実機(ゲームパッドとUSBドングルをつないで)でのテスト実行
 """
+import json
 import pygame
 import sys
 from typing import Optional
 
 import rclpy
 from rclpy.signals import SignalHandlerOptions
+from std_msgs.msg import String
 
 from .constants import DEBUG
+from .constants import EPISODE_EVENT_END
+from .constants import EPISODE_EVENT_START
+from .constants import QOS_PROFILE
+from .constants import TOPICNAME_ROBOBIKE_EPISODE
+from .pad_constants import GAMEPAD_ACTION_EPISODE_END
+from .pad_constants import GAMEPAD_ACTION_EPISODE_START
+from .pad_constants import GAMEPAD_ACTION_PUBLISH_START
+from .pad_constants import GAMEPAD_ACTION_PUBLISH_STOP
 from .pad_constants import GAMEPAD_ANALOG_CHANGE_THRESHOLD
 from .pad_constants import GAMEPAD_AXES_INDEX_TO_COMMAND_MAPPING
 from .pad_constants import GAMEPAD_AXES_INDEX_TO_COMMAND_MAPPING_LEN
@@ -44,6 +56,15 @@ class PadCommandPublisher(CommandPublisher):
 
         # Publish可否フラグ
         self.stop_pub()
+
+        # エピソード開始/終了イベントのPublisher
+        self.episode_publisher = self.create_publisher(
+            String,
+            TOPICNAME_ROBOBIKE_EPISODE,
+            QOS_PROFILE
+        )
+        # エピソード記録中フラグ
+        self._episode_active = False
 
         # タイマーの設定
         self.timer = self.create_timer(
@@ -153,6 +174,38 @@ class PadCommandPublisher(CommandPublisher):
         }
         return joy_status
 
+    def _send_episode_event(self, event: str, reason: str) -> None:
+        """
+        エピソード開始/終了イベントを送信します。
+
+        Args:
+            event (str): EPISODE_EVENT_START または EPISODE_EVENT_END
+            reason (str): イベントの理由(ボタン名・切断など)
+        """
+        msg = String()
+        msg.data = json.dumps({"event": event, "reason": reason})
+        self.episode_publisher.publish(msg)
+        self.get_logger().info(f"Sent episode event: {msg.data}")
+
+    def start_episode(self) -> None:
+        """Publishを開始し、エピソード開始イベントを送信します(記録中の場合は一度終了する)。"""
+        if self._episode_active:
+            self._send_episode_event(EPISODE_EVENT_END, "restart")
+        self.start_pub()
+        self._send_episode_event(EPISODE_EVENT_START, "start_button")
+        self._episode_active = True
+
+    def end_episode(self, reason: str) -> None:
+        """
+        エピソード記録中の場合はエピソード終了イベントを送信します。
+
+        Args:
+            reason (str): 終了の理由(ボタン名・切断など)
+        """
+        if self._episode_active:
+            self._send_episode_event(EPISODE_EVENT_END, reason)
+            self._episode_active = False
+
     def _reset_joy_status(self) -> None:
         """比較用のゲームパッド状態を中立状態に戻します。"""
         self.joy_status = self.create_neutral_joy_status()
@@ -170,6 +223,7 @@ class PadCommandPublisher(CommandPublisher):
             if self.can_publish():
                 self.send_stop_command()
                 self.stop_pub()
+            self.end_episode("disconnect")
             self._reset_joy_status()
         self._gamepad_connected = False
 
@@ -272,17 +326,26 @@ class PadCommandPublisher(CommandPublisher):
                 previous_button_value = self.joy_status["buttons"][current_button_index]
                 # ゲームパッドのボタンの値は押下時1、解除時0
                 if current_button_value != previous_button_value and current_button_value == 1:
-                    #コマンドインデックスに変換（ただし、0はPublish開始、-1はPublish停止を意味する）
+                    #コマンドインデックスに変換（ただし、0以下はGAMEPAD_ACTION_*の特殊操作を意味する）
                     current_command_index = self._get_command_index_from_button_index(
                         current_button_index
                     )
-                    # command_index=0の場合Publish開始指示
-                    if current_command_index == 0:
+                    # Publish開始指示
+                    if current_command_index == GAMEPAD_ACTION_PUBLISH_START:
                         self.start_pub()
-                    # command_index=-1の場合Publish停止指示(停止前に緊急停止コマンドを送信)
-                    elif current_command_index == -1:
+                    # Publish停止指示(停止前に緊急停止コマンドを送信、記録中のエピソードも終了)
+                    elif current_command_index == GAMEPAD_ACTION_PUBLISH_STOP:
                         self.send_stop_command()
                         self.stop_pub()
+                        self.end_episode("stop_button")
+                    # Publish開始＋エピソード開始指示
+                    elif current_command_index == GAMEPAD_ACTION_EPISODE_START:
+                        self.start_episode()
+                    # Publish停止＋エピソード終了指示(停止前に緊急停止コマンドを送信)
+                    elif current_command_index == GAMEPAD_ACTION_EPISODE_END:
+                        self.send_stop_command()
+                        self.stop_pub()
+                        self.end_episode("end_button")
                     # ROBOBIKE上のコマンドの場合、command_value_listに追加
                     else:
                         # 変化あり、かつ押下時はcommand_value_listに辞書を1件追加する
@@ -304,6 +367,14 @@ class PadCommandPublisher(CommandPublisher):
         if DEBUG:
             self.get_logger().debug(f"Return command value list(buttons): {command_value_list}")
         return command_value_list
+
+    def destroy_node(self) -> None:
+        """記録中のエピソードを終了してからROSノードを破棄します。"""
+        try:
+            self.end_episode("shutdown")
+        except Exception as error:
+            self.get_logger().error(f'Failed to send episode end on shutdown: {error}')
+        super().destroy_node()
 
     def _get_command_value_list_from_axes(self, current_axes: list[float]) -> list[dict]:
         """
