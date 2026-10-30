@@ -36,10 +36,11 @@ VIRTUAL_ENV=.venv-train uv pip install 'lerobot[dataset,training]==0.6.1'
 
 ### 1. 記録(Raspberry Pi)
 
-dummybike/実機・pub_status・pub_telemetry・pub_image・sub_command・pub_command_pad を起動した状態で:
+必要なノードと記録(record_session)を一括起動します。`~/robobike_data/raw/<日時>/` に記録され、Ctrl+C で終了します。
 
 ```bash
-ros2 run bridge record_session   # ~/robobike_data/raw/<日時>/ に記録、Ctrl+C で終了
+ros2 launch bridge collect.launch.py                # 実機
+ros2 launch bridge collect.launch.py dummy:=true    # dummybike(実機不要)
 ```
 
 ゲームパッドの START でエピソード開始、BACK(または LB・切断)でエピソード終了です。
