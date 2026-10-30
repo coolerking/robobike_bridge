@@ -12,6 +12,8 @@ ROBOBIKEへのHTTP送信は受信コールバックとは別の送信スレッ�
     - 停止系コマンド(ROBOBIKE_STOP_COMMAND_NAMES): 未送信のコマンドをすべて破棄して最優先で送信
     - value値を持つコマンド(操舵など): 未送信の同じコマンドを最新の値で置き換え
     - その他: 受信順に送信
+停止系コマンドの送信に失敗した場合は最大 STOP_COMMAND_MAX_RETRIES 回まで再送する
+(新しい停止系コマンドが届いた場合は再送をやめてそちらを送信する)。
 
 実行例:
     ros2 run bridge sub_command --dummy --ros-args -r __node:=bike_test # ダミーデータでの実行
@@ -42,6 +44,8 @@ from .robobike_utils import normalize_value
 
 # 未送信コマンドの最大保持数(超えた場合は古いものから破棄)
 MAX_PENDING_COMMANDS = 20
+# 停止系コマンド送信失敗時の最大再送回数(停止系コマンドは何度送っても結果が同じため再送できる)
+STOP_COMMAND_MAX_RETRIES = 3
 
 
 class PendingCommand:
@@ -172,32 +176,59 @@ class RobobikeCommandSubscriber(Node):
                 pending = self._pending.popleft()
             self._send(pending)
 
+    def _has_pending_stop_command(self) -> bool:
+        """未送信の停止系コマンドがあるかを返します。"""
+        with self._condition:
+            return any(
+                queued.command in ROBOBIKE_STOP_COMMAND_NAMES for queued in self._pending
+            )
+
     def _send(self, pending: PendingCommand) -> None:
         """
         コマンドをROBOBIKEに送信し、待ち時間と通信時間をログに出力します。
 
+        停止系コマンドの送信に失敗した場合は最大 STOP_COMMAND_MAX_RETRIES 回まで再送します。
+        ただし新しい停止系コマンドが届いている場合は再送をやめ、そちらの送信に任せます。
+        停止系以外のコマンドは結果が変わる(速度+1など)可能性があるため再送しません。
+
         Args:
             pending (PendingCommand): 送信するコマンド
         """
-        started_at = time.monotonic()
-        wait_ms = (started_at - pending.received_at) * 1000
-        try:
-            result = self.broker.send_command(pending.command, pending.value)
-        except Exception as e:
-            self.get_logger().error(f'Error sending command {pending.command}: {e}')
-            return
-        http_ms = (time.monotonic() - started_at) * 1000
-        if result.get('status') == 'error':
-            self.get_logger().error(
-                f'Failed to send command {pending.command}: '
-                f'{result.get("error", "Unknown error")} '
-                f'(wait: {wait_ms:.1f} ms, http: {http_ms:.1f} ms)'
-            )
-            return
-        self.get_logger().info(
-            f'Sent command: {pending.command}, value: {pending.value} '
-            f'(wait: {wait_ms:.1f} ms, http: {http_ms:.1f} ms)'
-        )
+        is_stop = pending.command in ROBOBIKE_STOP_COMMAND_NAMES
+        max_attempts = 1 + (STOP_COMMAND_MAX_RETRIES if is_stop else 0)
+        wait_ms = (time.monotonic() - pending.received_at) * 1000
+        for attempt in range(1, max_attempts + 1):
+            started_at = time.monotonic()
+            try:
+                result = self.broker.send_command(pending.command, pending.value)
+                error = result.get('error', 'Unknown error') if result.get('status') == 'error' else None
+            except Exception as e:
+                error = str(e)
+            http_ms = (time.monotonic() - started_at) * 1000
+
+            if error is None:
+                self.get_logger().info(
+                    f'Sent command: {pending.command}, value: {pending.value} '
+                    f'(wait: {wait_ms:.1f} ms, http: {http_ms:.1f} ms, attempt: {attempt})'
+                )
+                return
+
+            if attempt < max_attempts:
+                if self._has_pending_stop_command():
+                    self.get_logger().warning(
+                        f'Failed to send command {pending.command}: {error} '
+                        f'(http: {http_ms:.1f} ms); newer stop command is pending, skipping retry'
+                    )
+                    return
+                self.get_logger().warning(
+                    f'Failed to send command {pending.command}: {error} '
+                    f'(http: {http_ms:.1f} ms); retrying ({attempt}/{STOP_COMMAND_MAX_RETRIES})'
+                )
+            else:
+                self.get_logger().error(
+                    f'Failed to send command {pending.command}: {error} '
+                    f'(wait: {wait_ms:.1f} ms, http: {http_ms:.1f} ms, attempt: {attempt})'
+                )
 
     def destroy_node(self) -> None:
         """送信スレッドを停止してからROSノードを破棄します。"""
