@@ -1,8 +1,21 @@
-![ROBOBIKE Bridge](./assets/title.png)
+<p align="center">
+  <picture>
+    <source
+      media="(prefers-color-scheme: dark)"
+      srcset="./assets/title_black_back.png">
+    <source
+      media="(prefers-color-scheme: light)"
+      srcset="./assets/title.png">
+    <img
+      alt="ROBOBIKE Bridge"
+      src="./assets/title.png"
+      width="800">
+  </picture>
+</p>
 
 # ROBOBIKE Bridge
 
-![ROBOBIKE概観](./assets/overview.png)
+<!-- ![ROBOBIKE概観](./assets/overview.png) -->
 
 本リポジトリは、[ROBOBIKE](https://robobikejp.com/) をROS2 Lyrical Luth を使った自律走行運転を実現するためのプログラムを提供します。
 
