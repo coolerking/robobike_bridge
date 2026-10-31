@@ -1,3 +1,5 @@
+# ROBOBIKE Bridge
+
 <p align="center">
   <picture>
     <source
@@ -12,15 +14,14 @@
       width="800">
   </picture>
 </p>
-
-# ROBOBIKE Bridge
-
 <!-- ![ROBOBIKE概観](./assets/overview.png) -->
+本リポジトリは、 [ROBOBIKE](https://robobikejp.com/) をROS2 Lyrical Luth を使った自律走行運転を実現するためのプログラムを提供します。
 
-本リポジトリは、[ROBOBIKE](https://robobikejp.com/) をROS2 Lyrical Luth を使った自律走行運転を実現するためのプログラムを提供します。
 
 
-## ロボットデバイス（ROBOBIKE）
+## 1. ROBOBIKE システム
+
+![ROBOBIKE システム構成](./assets/robobike_base_system.png)
 
 [ROBOBIKE](https://robobikejp.com/) は、[モバイルロボット研究会](https://robobike.jp) が開発・販売しているスマートフォンを使って操作するリモコン2輪走行ロボットです。
 
@@ -28,7 +29,7 @@
 
 販売されている ROBOBIKE をそのまま使用しています（一切改変を加えていません）。
 
-### 自由度3
+### 1.1 駆動系
 
 - 前輪(ステアリング) マイクロサーボ [MG90S](https://akizukidenshi.com/catalog/g/g113227/) ※操舵のみ、駆動なし
 
@@ -42,7 +43,7 @@
 
 ![サイドスタンド](./assets/motor03.png)
 
-### コントローラ(ROBOBIKE搭載基盤)
+### 1.2 コントローラ(ROBOBIKE搭載基盤)
 
 - [基盤図PCBA](https://github.com/tneurjpy-cloud/robobike/blob/main/doc/ROBOBIKE05_PCBA.pdf)
     - Wi-Fiモジュール [ESP32-C3-WROOM-02-N4](https://akizukidenshi.com/catalog/g/g117493/)
@@ -50,25 +51,26 @@
         - 電源ONすることで、Wi-Fi APとして動作→接続すると、ロボット側が 192.168.4.1 となる
     - USB-Cコネクタ経由で充電
 
-### バッテリ
+### 1.3 バッテリ
 
 - LJ Li-ion 2.96V 14500/800mAh
 
-## テレオペデバイス（スマートフォン）
+## 2. ROBOBIKE Bridge システム
 
-テレオペは、ROBOBIKEの操作用Webアプリをそのまま使用しました。
+![ROBOBIKE Bridge システム構成](./assets/robobike_bridge_system.png)
 
-- 充電済みROBOBIKEの電源ON
-- スマートフォンのWi-Fi設定を変更(SSIDは、ROBOBIKE-XXXXXX)
+### 2.1 テレオペデバイス（ゲームパッド）
 
-- 操作用Webアプリ
-    - 操作画面（手動運転、テレオペ用アプリとして使用）
-    - セットアップ画面（初期設定値、キャリブレーション）
+テレオペは、XBox互換ゲームパッドを使用しました。
 
-![操作画面](./assets/controller01.png)
-![セットアップ画面](./assets/controller02.png)
+- Elecom JC-U4113S X-mode
+    - USBドングルをBridgeノードに接続
 
-## モニターデバイス（Raspberry Pi）
+## 2.2 Bridge ノード（Raspberry Pi）
+
+
+Bridgeノードは主にROS2夜ピック通信とROBOBIKEのブリッジとして機能します。
+Wi-Fi回線を使用しているため、学習用データセット収集はこのノード上で一旦溜め込みます。
 
 - Raspberry Pi 5 16GB
 - Ubuntu Desktop 26.04.01 LTS
@@ -85,9 +87,11 @@
     - サンワサプライ USB書画カメラ [CMS-V46W](https://www.sanwa.co.jp/product/syohin?code=CMS-V46W)
 
 
-## ポリシーデバイス(PC)
+## 2.3 Policy ノード(PC)
 
 Raspberry Pi 5 では方策(Policy)の推論が実時間で間に合わないため、GPU 搭載の Linux PC を別途用意して、この上で学習・推論を行っています。
+
+Bridgeノードで収集したデータセットをACTで扱える形式にデータ変換し、これをもとにGPUを使ってトレーニング処理を実行、作成したモデルをもとにROS2サブスクライバとして推論実行結果を送信します。
 
 - Linux PC
     - Ubuntu 26.04 LTS(Docker・WSL は使用しない)
@@ -99,7 +103,7 @@ Raspberry Pi 5 では方策(Policy)の推論が実時間で間に合わないた
         - 出力：操舵値(速度はゲームパッドで人が操作)
 
 
-## ネットワーク構成
+### 2.4 ネットワーク構成
 
 以下の2系統で運用しています。
 
@@ -115,12 +119,8 @@ Raspberry Pi 5 では方策(Policy)の推論が実時間で間に合わないた
     - 192.168.4.1 デフォルトルータ兼ロボットデバイス：ROBOBIKE
     - 192.168.4.X モニターデバイス: Raspberry Pi 5
 
-![ネットワーク構成図](./assets/network01.png)
 
-
-
-
-## ソフトウェア構成
+### 2.5 ソフトウェア構成
 
 ROS2 パッケージ `bridge`(`src/bridge`)と、PC 専用の学習データ変換スクリプト(`policy`)で構成しています。
 
