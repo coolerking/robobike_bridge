@@ -74,25 +74,28 @@
 
 ## ポリシーデバイス(PC)
 
-Raspberry Pi 5で動作させるPolicyがおもいつかなかったため、Windows PCを別途用意して、この上でPolicyを動作させています。
+Raspberry Pi 5 では方策(Policy)の推論が実時間で間に合わないため、GPU 搭載の Linux PC を別途用意して、この上で学習・推論を行っています。
 
-- Windows 11 PC
-    - 有線LAN：10.0.0.0/8
-    - WSL3
-        - Ubuntu 26.04.01 LTS
-            - ROS2 Lyrical Luth
-            - Policy:TBD
+- Linux PC
+    - Ubuntu 26.04 LTS(Docker・WSL は使用しない)
+        - ROS2 Lyrical Luth(Python 3.14)
+    - GPU：NVIDIA GeForce RTX 3080
+    - 無線LAN：10.0.0.0/8(Raspberry Pi と DDS で通信)
+    - Policy：[LeRobot](https://github.com/huggingface/lerobot) ACT(Action Chunking Transformer)
+        - 入力：俯瞰カメラ画像(320x240)＋テレメトリ・ステータス(11項目)
+        - 出力：操舵値(速度はゲームパッドで人が操作)
 
 
 ## ネットワーク構成
 
 以下の2系統で運用しています。
 
-- 有線LAN
+- 有線LAN(Raspberry Pi は Wi-Fi 中継器の有線ポート経由、PC は無線で接続)
     - 10.0.0.0/8
     - 10.0.0.1 デフォルトルータ：家庭用ルータ(DHCP)
-    - 10.0.0.X ポリシーデバイス: Windows11 PC
+    - 10.0.0.X ポリシーデバイス: Linux PC
     - 10.0.0.Y モニターデバイス: Raspberry Pi 5
+    - 帯域の都合で、カメラ画像は 320x240 JPEG・10Hz で送信しています
 
 - 無線LAN
     - 192.168.4.0/24
@@ -103,6 +106,40 @@ Raspberry Pi 5で動作させるPolicyがおもいつかなかったため、Win
 
 
 
+
+## ソフトウェア構成
+
+ROS2 パッケージ `bridge`(`src/bridge`)と、PC 専用の学習データ変換スクリプト(`policy`)で構成しています。
+
+| ノード | 実行場所 | 内容 |
+|---|---|---|
+| `pub_image` | Raspberry Pi | 俯瞰カメラ画像の配信 |
+| `pub_status` / `pub_telemetry` | Raspberry Pi | ROBOBIKE のステータス・テレメトリの配信 |
+| `pub_command_pad` | Raspberry Pi | ゲームパッド操作をコマンドに変換(START/BACK でエピソード開始/終了) |
+| `sub_command` | Raspberry Pi | コマンドを ROBOBIKE に送信(`--watchdog` で方策の停止時に緊急停止) |
+| `record_session` | Raspberry Pi | ros2 bag(mcap)で学習データを記録 |
+| `pub_command_policy` | PC | 学習済み方策で推論し、操舵コマンドを送信 |
+| `dummybike` | どちらでも | ROBOBIKE の代わりのダミーサーバ(実機なしのテスト用) |
+| `calibration` | Raspberry Pi | 走行開始時の速度設定値(mot_spd)の調整 |
+
+Raspberry Pi 側は launch ファイルでまとめて起動します。
+
+```bash
+ros2 launch bridge collect.launch.py                  # 学習データの収集(記録あり)
+ros2 launch bridge collect.launch.py watchdog:=true   # 方策で走行(PC で pub_command_policy を実行)
+ros2 launch bridge collect.launch.py dummy:=true      # dummybike で動作確認(実機不要)
+```
+
+学習データの変換・学習・推論の手順は [policy/README.md](./policy/README.md) を参照してください。
+データセット・学習結果は `~/robobike_data`(環境変数 `ROBOBIKE_DATA_DIR` で変更可)に保存します。
+
+## 現状と既知の問題
+
+- 収集 → 変換 → 学習 → 推論 → ROBOBIKE へのコマンド送信まで、一連の動作を確認済みです
+- ゲームパッドでの手動運転が難しく(すぐに転倒する)、学習データはまだごく少量です。そのため学習済み方策で走行できる段階には至っていません
+- ROBOBIKE が Wi-Fi の届く範囲外に出ると、ROBOBIKE が待機状態になり、電源の入れ直しが必要になります
+- Ctrl+C で終了すると `process has died` などのエラーが表示されることがあります(動作には影響しません)
+- `colcon test` のコードスタイル検査(flake8・pep257・mypy)には未対応の指摘が残っています(機能テストは成功)
 
 ## ROS_DOMAIN_ID
 

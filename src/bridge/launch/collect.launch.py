@@ -21,12 +21,14 @@ pub_image/pub_status/pub_telemetry はログが多いため画面には出さず
     ros2 launch bridge collect.launch.py watchdog:=true      # 方策で走行(PC で pub_command_policy を実行)
 """
 from launch import LaunchContext, LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, OpaqueFunction, TimerAction
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 PACKAGE = 'bridge'
+# dummybike の HTTP サーバが起動するまで他のノードの起動を待つ時間(秒)
+DUMMYBIKE_STARTUP_DELAY_SEC = 2.0
 
 
 def _is_true(context: LaunchContext, name: str) -> bool:
@@ -36,10 +38,11 @@ def _is_true(context: LaunchContext, name: str) -> bool:
 
 def _create_nodes(context: LaunchContext) -> list:
     """launch 引数に応じてノードを作成します。"""
-    dummy_args = ['--dummy'] if _is_true(context, 'dummy') else []
+    is_dummy = _is_true(context, 'dummy')
+    dummy_args = ['--dummy'] if is_dummy else []
     dummy_camera_args = ['--dummy'] if _is_true(context, 'dummy_camera') else []
     watchdog_args = ['--watchdog'] if _is_true(context, 'watchdog') else []
-    return [
+    nodes = [
         Node(package=PACKAGE, executable='pub_image', arguments=dummy_camera_args, output='log'),
         Node(package=PACKAGE, executable='pub_status', arguments=dummy_args, output='log'),
         Node(package=PACKAGE, executable='pub_telemetry', arguments=dummy_args, output='log'),
@@ -47,6 +50,10 @@ def _create_nodes(context: LaunchContext) -> list:
              output='screen'),
         Node(package=PACKAGE, executable='pub_command_pad', output='screen'),
     ]
+    if is_dummy:
+        # 起動直後に dummybike へ接続できず Connection refused になるのを避ける
+        return [TimerAction(period=DUMMYBIKE_STARTUP_DELAY_SEC, actions=nodes)]
+    return nodes
 
 
 def generate_launch_description() -> LaunchDescription:
