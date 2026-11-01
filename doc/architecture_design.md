@@ -81,8 +81,10 @@ ROBOBIKE Bridgeシステムは、市販の二輪走行ロボット [ROBOBIKE](ht
 |項目|目標値・設計値|実現方法|
 |---|---|---|
 |制御周期|10Hz(0.1秒)|`POLICY_CONTROL_INTERVAL_SEC`。HTTP 往復時間に合わせて決定|
-|画像配信|320x240 JPEG、10Hz|`pub_image`。QoS は BEST_EFFORT|
-|ステータス・テレメトリ取得|20Hz(0.05秒、`--interval` で変更可)|`pub_status` / `pub_telemetry`|
+|画像配信|320x240 JPEG、10Hz(目標値)|`pub_image`。QoS は BEST_EFFORT|
+|ステータス・テレメトリ取得|20Hz(0.05秒、`--interval` で変更可。目標値)|`pub_status` / `pub_telemetry`|
+
+画像配信とステータス・テレメトリ取得は、処理のあとに周期分 `time.sleep()` する方式である。このため実効レートは、カメラ取得や HTTP 往復(約80ms)にかかる時間の分だけ目標値より低くなる(ステータス・テレメトリは HTTP 往復が約80msの場合、7Hz程度)。
 |テレメトリの平滑化|直近100msの平均|`RobobikeBridge.get_telemetry()`|
 |コマンド送信遅延の抑制|未送信の操舵値は最新値に置換、停止系は最優先|`sub_command` の送信キュー|
 |通信量の抑制|操舵値の変化が5未満(-100〜100の単位)、スティック変化が0.05未満なら送信しない|`POLICY_STEER_CHANGE_THRESHOLD`、`GAMEPAD_ANALOG_CHANGE_THRESHOLD`|

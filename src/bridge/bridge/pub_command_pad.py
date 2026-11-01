@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ファイル名: pub_command.py
+ファイル名: pub_command_pad.py
 
 Raspberry Pi 5/Ubuntu Desktop 26.04 LTSにUSBドングル経由で接続された
 ゲームパッドをテレオペ操作用デバイスにするためのモジュールです。

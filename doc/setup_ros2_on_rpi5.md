@@ -5,7 +5,7 @@ Dockerなどのコンテナを使わずに、Raspberry Pi 5のホストOS上に�
 
 ということで執筆(2026/10/19)時点のRaspberry Pi 5 で動作する最新Ubuntu Desktopのうち最新版とそのOSに対応できるROSのバージョンは、以下の組となる。
 
-- Ununtu Desktop 26.04.1 LTS
+- Ubuntu Desktop 26.04.1 LTS
 - ROS2 Lyrical Luth (2026/5 リリース)
 
 よってこのバージョンを前提にインストール手順の概要を紹介する

@@ -126,6 +126,9 @@ class DummyBikeHandler(BaseHTTPRequestHandler):
         """
         ボタン番号に応じてステータスを更新する(_lock 取得済みで呼ぶこと)
 
+        value クエリ(bt_Str_S の操舵値)は検証せず無視する。value の欠落や範囲外の値に
+        実機がどう応答するかは確認していないため、送信値の誤りはダミーでは検出できない。
+
         Args:
             query_params (dict): parse_qs で得たクエリパラメータ
 

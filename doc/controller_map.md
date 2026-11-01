@@ -26,8 +26,8 @@ root.html からは setup.html、setup2.html へと遷移できます。
 
 ROBOBIKEはHTTP GETを用いて、ROBOBIKEへコマンドを送信できます。
 
-書式は `http://192.168.4.1/command&button=<button番号>` です。
-ただし、一部コマンドは `http://192.168.4.1/command&button=<button番号>&value=<値>` のように value を指定する必要があります。
+書式は `http://192.168.4.1/command?button=<button番号>` です。
+ただし、一部コマンドは `http://192.168.4.1/command?button=<button番号>&value=<値>` のように value を指定する必要があります。
 
 以下、実機に対して、curlコマンドを用いて調査した動作検証結果を表にまとめたものです。
 
@@ -43,17 +43,17 @@ ROBOBIKEはHTTP GETを用いて、ROBOBIKEへコマンドを送信できます�
 | 6 | N/A | "bt_R" | 停止したまま右一杯 |
 | 7 | ステアリング値(int) (-100<最左>, 100<最右>) | "bt_Str_S" | ステアリング値を送信するコマンド |
 | 8 | N/A | "bt_BK" | 連続後進 |
-| 9 | N/A | "bt_A_Up_0" | モータ速度(mot_std)+1 |
-| 10 | N/A | "bt_A_Dn_0" | モータ速度(mot_std)-1 |
-| 11 | N/A | "bt_A_Up" | モータ速度(mot_std)+1で連続前進(ステアリング角維持) |
-| 12 | N/A | "bt_A_Dn" | モータ速度(mot_std)-1で連続前進(ステアリング角維持) |
+| 9 | N/A | "bt_A_Up_0" | モータ速度(mot_spd)+1 |
+| 10 | N/A | "bt_A_Dn_0" | モータ速度(mot_spd)-1 |
+| 11 | N/A | "bt_A_Up" | モータ速度(mot_spd)+1で連続前進(ステアリング角維持) |
+| 12 | N/A | "bt_A_Dn" | モータ速度(mot_spd)-1で連続前進(ステアリング角維持) |
 | 13 | N/A | "bt_A_L" | ステアリング標準位置(str0)-1 |
 | 14 | N/A | "bt_A_R" | ステアリング標準位置(str0)+1 |
 | 15 | N/A | "bt_S_Up" | ステアリング感度(gain_str)+0.01 |
 | 16 | N/A | "bt_S_Dn" | ステアリング感度(gain_str)-0.01 |
 | 17 | N/A | "bt_R_Up" | ロール方向のゲイン(gain_w_roll)+1.00 |
 | 18 | N/A | "bt_R_Dn" | ロール方向のゲイン(gain_w_roll)-1.00 |
-| 19 | N/A | "bt_D_St" | 停止(mod_spd維持) |
+| 19 | N/A | "bt_D_St" | 停止(mot_spd維持) |
 | 20 | N/A | "bt_D_Up" | ステアリング差分感度(gain_str_diff)+0.01 |
 | 21 | N/A | "bt_D_Dn" | ステアリング差分感度(gain_str_diff)-0.01 |
 | 22 | N/A | "bt_Std_nutAuto" | 初期傾斜角を標準位置に戻す(停止) |
@@ -75,12 +75,12 @@ ROBOBIKEはHTTP GETを用いて、ROBOBIKEへコマンドを送信できます�
 
 - button番号が1から開始することに注意してください
 - ROBOBIKE は通信が一定時間ないと待機モードにはいり、電源スイッチOFF→ONしないと復帰しません（バッテリの消費を防ぐための仕様）
-    - `curl http://192.168.4.1/command&button=2` を定期的に実行することで、ROBOBIKEの待機モード移行を防ぐことができます
-- `curl http://192.168.4.1/command&button=1` を実行するとROBOBIKEが停止します（緊急停止に使用してください）
+    - `curl 'http://192.168.4.1/command?button=2'` を定期的に実行することで、ROBOBIKEの待機モード移行を防ぐことができます
+- `curl 'http://192.168.4.1/command?button=1'` を実行するとROBOBIKEが停止します（緊急停止に使用してください）
 
 ### 状態空間：command 戻り値
 
-コマンド（`curl http://192.168.4.1/command&button=2`など）を送信した際のレスポンスとして以下の形式の `text/csv` 形式(UTF-8)のデータが返されます。
+コマンド（`curl 'http://192.168.4.1/command?button=2'`など）を送信した際のレスポンスとして以下の形式の `text/csv` 形式(UTF-8)のデータが返されます。
 
 |番号|インデックス| デフォルト値 |動作検証結果 |
 |---:|:---|---|:---|

@@ -14,8 +14,6 @@ DEBUG: Final[bool] = True
 
 # トピック名(カメラ画像用、JPEG圧縮した sensor_msgs/CompressedImage)
 TOPICNAME_IMAGE: Final[str] = 'camera_image/compressed'
-# トピック名(Joy用)
-#TOPICNAME_JOY: Final[str] = 'joy'
 # トピック名(ROBOBIKE /command)
 TOPICNAME_ROBOBIKE_COMMAND: Final[str] = 'robobike_command'
 # トピック名(ROBOBIKE /status)
@@ -122,7 +120,7 @@ ROBOBIKE_COMMAND_NAMES: Final[list[str]] = [
     "bt_S",             #  4: 停止
     "bt_L",             #  5: 停止したまま左一杯
     "bt_R",             #  6: 停止したまま右一杯
-    "bt_Str_S",         #  7: ステアリング値を送信するコマンド(valueで (-100<LEFT>, 100<RIGHT>)の範囲で指定)
+    "bt_Str_S",         #  7: ステアリング値を送信するコマンド(valueで -100(左)〜100(右)の範囲で指定)
     "bt_BK",            #  8: 連続後進
     "bt_A_Up_0",        #  9: モータ速度(mot_spd)+1
     "bt_A_Dn_0",        # 10: モータ速度(mot_spd)-1

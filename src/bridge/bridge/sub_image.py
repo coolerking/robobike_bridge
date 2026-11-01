@@ -36,13 +36,13 @@ class ImageSubscriber(Node):
         self.subscriber = self.create_subscription(
             CompressedImage,
             TOPICNAME_IMAGE,
-            self.recieve_camera_image,
+            self.receive_camera_image,
             IMAGE_QOS_PROFILE
         )
         self.subscriber
         self.get_logger().info('Image Subscriber node has been started.')
 
-    def recieve_camera_image(self, msg: CompressedImage):
+    def receive_camera_image(self, msg: CompressedImage):
         """
         pub_image.py で配信されたカメラ画像を受信・展開して、CV2 で表示します。
         GUI環境での表示を前提としています。

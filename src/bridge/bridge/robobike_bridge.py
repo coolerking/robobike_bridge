@@ -166,7 +166,7 @@ class RobobikeBridge():
             logger.exception('Failed to send Robobike command: %s', e)
             return {'status': 'error', 'error': str(e)}
 
-    def get_status(self) -> dict[str, str | int | float] | None:
+    def get_status(self) -> dict[str, str | int | float]:
         """
         Robobikeのステータスを取得します。
 
@@ -174,7 +174,7 @@ class RobobikeBridge():
         失敗した場合は status=error の辞書を返します。
 
         Returns:
-            dict[str, str | int | float] | None: ステータス情報の辞書、
+            dict[str, str | int | float]: ステータス情報の辞書、
             通信失敗を含むエラーの場合は status=error の辞書
         """
         # command="only_data"の戻り値を返す 
