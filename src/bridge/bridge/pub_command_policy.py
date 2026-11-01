@@ -215,10 +215,12 @@ class PolicyCommandPublisher(CommandPublisher):
             # 古い入力から予測した行動列を使い続けないよう破棄する
             self.policy.reset()
             if self.can_publish() and self._has_inferred:
-                # ウォッチドッグが緊急停止するため、入力が復帰しても操舵を再開しない
+                # 入力がすぐ復帰するとハートビートが途切れずウォッチドッグが働かないため、
+                # 自分から緊急停止コマンドを送る。入力が復帰しても操舵は再開しない
                 # (再開はゲームパッドの START で行う)
                 self.get_logger().error(
                     f'Inputs lost during steering: {", ".join(stale)}; stopping policy steering.')
+                self.send_stop_command()
                 self.stop_policy()
             else:
                 self._warn_throttled(f'Waiting for inputs: {", ".join(stale)}')
@@ -228,7 +230,16 @@ class PolicyCommandPublisher(CommandPublisher):
             steer_value = self.infer_steer_value()
         except Exception as error:
             self.policy.reset()
-            self._warn_throttled(f'Inference failed: {type(error).__name__}: {error}')
+            if self.can_publish():
+                # 操舵中に推論が失敗した場合は緊急停止し、推論が復帰しても操舵を再開しない
+                # (再開はゲームパッドの START で行う)
+                self.get_logger().error(
+                    f'Inference failed during steering: {type(error).__name__}: {error}; '
+                    'stopping policy steering.')
+                self.send_stop_command()
+                self.stop_policy()
+            else:
+                self._warn_throttled(f'Inference failed: {type(error).__name__}: {error}')
             return
 
         if self.can_publish() and (

@@ -87,9 +87,11 @@ ros2 run bridge pub_image
 
 > ずっとカメラ画像データを配信し続ける
 
-- 別のターミナルを開き、以下のコマンドを実行する
+- 別のターミナルを開き、以下のコマンドを実行する(新しいターミナルではワークスペースの `install/setup.bash` を読み込み直す)
 
 ```shell
+cd ~/ros_ws/robobike_bridge
+source install/setup.bash
 ros2 run bridge sub_image
 ```
 

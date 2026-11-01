@@ -234,8 +234,12 @@ class RobobikeCommandSubscriber(Node):
                         del self._pending[index]
                         break
             if len(self._pending) >= MAX_PENDING_COMMANDS:
-                dropped = self._pending.popleft()
-                self.get_logger().warning(f'Pending queue full; dropped {dropped.command}')
+                # 停止系コマンドは破棄せず、最も古い停止系以外のコマンドを破棄する
+                for index, queued in enumerate(self._pending):
+                    if queued.command not in ROBOBIKE_STOP_COMMAND_NAMES:
+                        del self._pending[index]
+                        self.get_logger().warning(f'Pending queue full; dropped {queued.command}')
+                        break
             self._pending.append(pending)
             self._condition.notify()
 

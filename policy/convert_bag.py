@@ -328,6 +328,16 @@ def main() -> None:
     # データセット名が指定されていない場合はエラー
     if args.name is None:
         parser.error('--name is required unless --list is specified')
+    # データセット名は DATA_DATASETS_DIR 直下の1階層の名前に限る
+    # (--overwrite で DATA_DATASETS_DIR の外を削除しないため。.. ・絶対パス・symlink も拒否する)
+    name_parts = Path(args.name).parts
+    if (
+        len(name_parts) != 1
+        or name_parts[0] in ('.', '..')
+        or Path(args.name).is_absolute()
+        or (DATA_DATASETS_DIR / args.name).resolve().parent != DATA_DATASETS_DIR.resolve()
+    ):
+        parser.error(f'--name must be a single directory name under {DATA_DATASETS_DIR}: {args.name!r}')
 
     # 除外対象を除いたエピソードを対象とする
     targets = [episode for episode in episodes if episode.number not in args.exclude]

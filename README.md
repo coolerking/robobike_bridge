@@ -188,15 +188,29 @@ ros2 launch bridge collect.launch.py dummy:=true      # dummybike で動作確�
 ```
 
 > 実機を停止している・購入していない場合、dummybike.py にダミーサーバを実行できるようにしています。
-> ただし、すべて同じ値しか返さないので、学習データセットを作っても（動作はするとおもいますが）、学習した方策は使用しないでください。
+> ただし、テレメトリは時刻以外が固定値で、ステータスも設定変更コマンドに応じて値が変わるだけです。学習データセットを作っても（動作はするとおもいますが）、学習した方策は使用しないでください。
 
 ### 5.2 Policyノード
 
+方策で走行する場合は、まず Raspberry Pi でウォッチドッグを有効にして Bridgeノードを起動します。
+
 ```bash
+# Raspberry Pi で実行
 source /opt/ros/lyrical/setup.bash
 cd ~/ros_ws/robobike_bridge
 source install/setup.bash
-ros2 launch bridge collect.launch.py watchdog:=true   # 方策で走行(PC で pub_command_policy を実行)
+ros2 launch bridge collect.launch.py watchdog:=true
+```
+
+次に PC で推論ノードを起動します(`.venv` の作成手順は [policy/README.md](./policy/README.md) を参照)。
+
+```bash
+# PC で実行
+source /opt/ros/lyrical/setup.bash
+cd ~/ros_ws/robobike_bridge
+source install/setup.bash
+.venv/bin/python -m bridge.pub_command_policy \
+  --model ~/robobike_data/runs/<実行名>/checkpoints/last/pretrained_model
 ```
 
 
@@ -245,6 +259,10 @@ GUIDEボタンが点灯していると、Bridgeノードと接続できていま
 
 コードレビュー(2026年11月1日)で指摘を受け、未対応のものです。
 
+- ゲームパッドのアナログ軸は、前回の周期の値から 0.05 以上変化した場合にだけコマンドを送信します。送信しなかった値も比較の基準として更新するため、スティックやトリガをゆっくり動かすと、操舵コマンドも LT/RT の緊急停止(`stp_all`)も送信されないことがあります
+- B/GUIDE/LT/RT で緊急停止しても、Publish の状態(手動運転・方策の操舵)は変わりません。続けてスティックを操作すると走行・操舵コマンドが送信されます(同じ周期の走行・操舵コマンドは破棄します)
+- `sub_command` は終了時に未送信のコマンドを破棄し、自身からは停止コマンドを送信しません。launch 全体を Ctrl+C で終了した場合、ゲームパッド側が送った停止コマンドが ROBOBIKE に届かないことがあります
+- 方策で走行中も、ゲームパッドのスティック左右で操舵コマンドが送信され、方策の操舵を上書きします。方策は自分が最後に送った値と比べて変化した場合にだけ送信するため、手動で送った操舵値がそのまま残ることがあります
 - テレメトリ取得(`RobobikeBridge.get_telemetry()`)の HTTP タイムアウトが 60 秒になっています(他の HTTP 呼び出しは 1 秒)。ROBOBIKE が応答しなくなると、`pub_telemetry` の配信が最大 60 秒止まります。方策で走行中は入力の鮮度チェックとウォッチドッグで停止します。起動直後など ROBOBIKE 側のバッファがたまった状態の応答時間を実機で確認してから見直す予定です
 - `pub_command_policy` は、操舵を停止している間も推論とハートビートの送信を続けます。そのため GPU を使い続けるほか、手動運転中に `pub_command_policy` を起動したままにすると、画像などの入力が途絶えたときにウォッチドッグが緊急停止します
 - `RobobikeBridge.send_command()` は value(操舵値)を検証・正規化しません。`sub_command` 経由では正規化されますが、`calibration` のように直接呼び出す場合は、範囲外の値や value の欠落がそのまま送信されます
@@ -253,7 +271,14 @@ GUIDEボタンが点灯していると、Bridgeノードと接続できていま
 - `record_session` の保存先ディレクトリ名は秒単位の日時のため、同じ秒に 2 回起動すると保存先が衝突します
 - `policy/convert_bag.py` は、フレームの作成中に例外(項目の欠落など)が発生すると変換全体が途中で止まります。エピソード単位でスキップする処理はありません
 
-今後の検討事項として、GitHub Actions による `colcon test` の自動実行、学習・推論用 venv の依存パッケージの固定(requirements ファイル)、トピックのカスタムメッセージ型への移行、パッケージの分割(Pi 側・PC 側)があります。
+実機・実データで確認が必要な事項として、次のものがあります。
+
+- Pi–PC 間の遅延:方策は受信時刻で入力の鮮度を判定しており、画像の取得時刻(`header.stamp`)は使っていません
+- 教師データの意味:bag に記録するのは送信要求(`robobike_command`)で、`sub_command` が置き換え・破棄したコマンドや HTTP 送信の失敗は区別していません
+- エピソード開始時の操舵値:変換では、エピソードの境界をまたいで直前の `bt_Str_S` の値を引き継ぎます。前進・停止などのコマンドが ROBOBIKE 内部の操舵値をどう変えるかを確認する必要があります
+- 新規環境の依存解決:セットアップ手順に `rosdep install` がありません
+
+今後の検討事項として、GitHub Actions による `colcon test` の自動実行、学習・推論用 venv の依存パッケージの固定(requirements ファイル)、トピックのカスタムメッセージ型への移行、パッケージの分割(Pi 側・PC 側)、操作権限(手動・方策・停止)を Pi 側で一元管理する仕組みがあります。
 
 
 ## A. ライセンス

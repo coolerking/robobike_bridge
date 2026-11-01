@@ -10,6 +10,7 @@ from .constants import ROBOBIKE_COMMAND_NAMES
 from .constants import ROBOBIKE_COMMAND_NAMES_LEN
 from .constants import ROBOBIKE_COMMAND_NAMES_REQUIRING_VALUE
 from .constants import ROBOBIKE_EMERGENCY_STOP_COMMAND
+from .constants import ROBOBIKE_STOP_COMMAND_NAMES
 from .constants import TOPICNAME_ROBOBIKE_COMMAND
 from .robobike_utils import get_command_index
 
@@ -37,8 +38,13 @@ class CommandPublisher(Node):
         )
 
     def send_command(self, params: dict) -> None:
-        """Publishが有効な場合にコマンド辞書をJSON文字列として送信します。"""
-        if not self.is_publish:
+        """
+        コマンド辞書をJSON文字列として送信します。
+
+        Publish停止中は送信しません。ただし停止系コマンド(ROBOBIKE_STOP_COMMAND_NAMES)は
+        停止中でも送信します(停止方向の操作は常に許可する)。
+        """
+        if not self.is_publish and not self.is_stop_command(params.get('command_index')):
             self.get_logger().warning("Cannot send command: Publishing is stopped.")
             return
 
@@ -79,6 +85,13 @@ class CommandPublisher(Node):
             return False
         command_name = ROBOBIKE_COMMAND_NAMES[command_index - 1]
         return command_name in ROBOBIKE_COMMAND_NAMES_REQUIRING_VALUE
+
+    @staticmethod
+    def is_stop_command(command_index: int | None) -> bool:
+        """コマンド番号が停止系コマンドかを返します。"""
+        if command_index is None or not 1 <= command_index <= ROBOBIKE_COMMAND_NAMES_LEN:
+            return False
+        return ROBOBIKE_COMMAND_NAMES[command_index - 1] in ROBOBIKE_STOP_COMMAND_NAMES
 
     def destroy_node(self) -> None:
         """

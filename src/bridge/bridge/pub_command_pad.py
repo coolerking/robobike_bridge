@@ -336,10 +336,19 @@ class PadCommandPublisher(CommandPublisher):
             if DEBUG:
                 self.get_logger().debug(f"Target command value list: {command_value_list}")
 
+        # 停止系コマンドがある周期は、同じ周期の走行・操舵コマンドを破棄して停止系だけを送る
+        # (停止の直後に走行コマンドが届いて再走行するのを防ぐ)
+        stop_command_value_list = [
+            command_value for command_value in command_value_list
+            if self.is_stop_command(command_value.get('command_index'))
+        ]
+        if stop_command_value_list:
+            command_value_list = stop_command_value_list
+
         # command_value_listを順番にPublish
         for command_value in command_value_list:
-            # Publish可能かを確認
-            if self.can_publish():
+            # Publish可能かを確認(停止系コマンドはPublish停止中でも送信する)
+            if self.can_publish() or self.is_stop_command(command_value.get('command_index')):
                 # コマンドをPublish送信
                 self.send_command(command_value)
                 if DEBUG:
