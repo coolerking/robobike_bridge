@@ -57,6 +57,7 @@ def _create_nodes(context: LaunchContext) -> list:
 
 
 def generate_launch_description() -> LaunchDescription:
+    """launch 引数の宣言と、dummybike・各ノード・record_session の起動内容を返します。"""
     return LaunchDescription([
         DeclareLaunchArgument('dummy', default_value='false',
                               description='Use dummybike instead of the real ROBOBIKE'),

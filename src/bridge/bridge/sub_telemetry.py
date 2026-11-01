@@ -64,6 +64,7 @@ class TelemetrySubscriber(Node):
             return
 
         def fmt(name: str) -> str:
+            """テレメトリ項目の値をログ表示用の文字列にします。"""
             # float値はウィンドウ平均で誤差が出るため小数点以下3桁で表示
             value = telemetry.get(name)
             return f'{value:.3f}' if isinstance(value, float) else str(value)

@@ -52,6 +52,9 @@ def _get_mot_spd(status: Optional[dict]) -> int:
 
 
 def main() -> None:
+    """
+    モータ速度(mot_spd)のキャリブレーションを行います。
+    """
     # 引数処理
     parser = argparse.ArgumentParser(
         prog="calibration",

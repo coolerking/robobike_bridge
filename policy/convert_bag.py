@@ -56,21 +56,41 @@ ROBOT_TYPE = 'robobike'
 # この時間(秒)より古い画像・テレメトリ・ステータスを使ったフレームは警告を出す
 STALE_WARNING_SEC = 0.5
 
+# ナノ秒と秒の変換用
 NSEC_PER_SEC = 1_000_000_000
 
 
 @dataclass
 class TimeSeries:
-    """記録時刻(ナノ秒)順に並んだメッセージ列。"""
+    """
+    記録時刻(ナノ秒)順に並んだメッセージ列を定義するデータクラス
+    """
+    # 記録時刻(ナノ秒)のリスト
     times: list[int] = field(default_factory=list)
+    # valueのリスト
     values: list[Any] = field(default_factory=list)
 
     def append(self, time_ns: int, value: Any) -> None:
+        """
+        指定した時刻のデータを追加します。
+
+        Args:
+            time_ns (int): 記録時刻(ナノ秒)
+            value (Any): データ
+        """
         self.times.append(time_ns)
         self.values.append(value)
 
     def latest(self, time_ns: int) -> Optional[tuple[int, Any]]:
-        """time_ns 以前で最新の (記録時刻, 値) を返します(なければ None)。"""
+        """
+        time_ns 以前で最新の (記録時刻, 値) を返します(なければ None)。
+
+        Args:
+            time_ns (int): 基準時刻(ナノ秒)
+
+        Returns:
+            Optional[tuple[int, Any]]: 最新の (記録時刻, 値) または None
+        """
         index = bisect.bisect_right(self.times, time_ns) - 1
         if index < 0:
             return None
@@ -79,23 +99,39 @@ class TimeSeries:
 
 @dataclass
 class Session:
-    """1つの bag から読み込んだデータ。"""
+    """
+    1つの bag から読み込んだデータを保持するデータクラス
+    """
+    # bag のパス
     path: Path
+    # 画像の時系列
     images: TimeSeries = field(default_factory=TimeSeries)
+    # テレメトリの時系列
     telemetry: TimeSeries = field(default_factory=TimeSeries)
+    # ステータスの時系列
     status: TimeSeries = field(default_factory=TimeSeries)
+    # ステアリングコマンドの時系列
     steer: TimeSeries = field(default_factory=TimeSeries)
+    # エピソードイベントの時系列
     episode_events: TimeSeries = field(default_factory=TimeSeries)
+    # 最後に読み込んだ時刻(ナノ秒)
     last_time_ns: int = 0
 
 
 @dataclass
 class Episode:
-    """変換対象のエピソード区間。"""
+    """
+    変換対象のエピソード区間を定義するデータクラス
+    """
+    # エピソード番号
     number: int
+    # 対応するセッション
     session: Session
+    # エピソードの開始時刻(ナノ秒)
     start_ns: int
+    # エピソードの終了時刻(ナノ秒)
     end_ns: int
+    # エピソード終了の理由
     end_reason: str
 
 
@@ -109,15 +145,20 @@ def read_session(path: Path) -> Session:
     Returns:
         Session: 読み込んだデータ
     """
+    # SequentialReader を作成して bag を開く
     reader = rosbag2_py.SequentialReader()
+    # ストレージオプションとコンバータオプションを設定しオープンする
     reader.open(
         rosbag2_py.StorageOptions(uri=str(path), storage_id=RECORD_STORAGE_ID),
         rosbag2_py.ConverterOptions(input_serialization_format='', output_serialization_format='')
     )
+    # トピックごとのメッセージ型を取得
     message_types = {
         topic.name: get_message(topic.type) for topic in reader.get_all_topics_and_types()
     }
+    # ステアリングコマンドのインデックスを取得
     steer_command_index = get_command_index(STEER_COMMAND_NAME)
+    # セッションを初期化
     session = Session(path=path)
     while reader.has_next():
         # (トピック名, データ, 受信時刻, 送信時刻)：同一マシンで記録するため受信時刻を使う
@@ -169,6 +210,7 @@ def find_episodes(session: Session, first_number: int) -> list[Episode]:
     start_ns: Optional[int] = None
 
     def close(end_ns: int, reason: str) -> None:
+        """開始済みのエピソードがあれば end_ns で区切ってリストに追加します。"""
         nonlocal start_ns
         if start_ns is not None:
             episodes.append(Episode(first_number + len(episodes), session, start_ns, end_ns, reason))
@@ -212,26 +254,54 @@ def iter_frames(episode: Episode):
 
 
 def count_frames(episode: Episode) -> int:
-    """エピソードの概算フレーム数を返します(一覧表示用)。"""
+    """
+    エピソードの概算フレーム数を返します(一覧表示用)。
+
+    Args:
+        episode (Episode): 対象のエピソード
+
+    Returns:
+        int: 概算フレーム数
+    """
     return int((episode.end_ns - episode.start_ns) * POLICY_FPS // NSEC_PER_SEC) + 1
 
 
 def parse_exclude(text: str) -> set[int]:
-    """'2,5' 形式の除外エピソード番号を解析します。"""
+    """'
+    2,5' 形式の除外エピソード番号を解析します。
+    
+    Args:
+        text (str): CSV 形式の除外エピソード番号文字列
+
+    Returns:
+        set[int]: 除外対象のエピソード番号の集合
+    """
     return {int(item) for item in text.split(',') if item.strip()}
 
 
 def main() -> None:
+    """
+    メイン処理
+
+    指定された bag ディレクトリからエピソードを抽出し、LeRobotDataset に変換します。
+    """
+    # コマンドライン引数を解析
     parser = argparse.ArgumentParser(
         prog='convert_bag',
         description='Convert ROBOBIKE ros2 bags to a LeRobotDataset'
     )
+    # bag ディレクトリ
     parser.add_argument('bags', nargs='+', type=Path, help='bag directories recorded by record_session')
+    # データセット名
     parser.add_argument('--name', help='dataset name (saved under DATA_DATASETS_DIR/<name>)')
+    # エピソード一覧表示
     parser.add_argument('--list', action='store_true', help='list episodes and exit')
+    # CSV 形式での除外エピソード指定
     parser.add_argument('--exclude', type=parse_exclude, default=set(),
                         help='comma separated episode numbers to exclude (see --list)')
+    # タスク説明
     parser.add_argument('--task', default=DEFAULT_TASK, help=f'task description (default: {DEFAULT_TASK!r})')
+    # 既存データセットの上書き
     parser.add_argument('--overwrite', action='store_true', help='overwrite an existing dataset')
     args = parser.parse_args()
 
@@ -243,6 +313,7 @@ def main() -> None:
         episodes += find_episodes(session, first_number=len(episodes) + 1)
 
     print(f'\n{"No":>3}  {"bag":<20} {"start":>8} {"sec":>6} {"frames":>6}  end_reason')
+    # エピソード一覧を表示
     for episode in episodes:
         mark = '  (excluded)' if episode.number in args.exclude else ''
         offset_sec = (episode.start_ns - episode.session.images.times[0]) / NSEC_PER_SEC \
@@ -254,14 +325,17 @@ def main() -> None:
         )
     if args.list:
         return
+    # データセット名が指定されていない場合はエラー
     if args.name is None:
         parser.error('--name is required unless --list is specified')
 
+    # 除外対象を除いたエピソードを対象とする
     targets = [episode for episode in episodes if episode.number not in args.exclude]
     if not targets:
         print('no episodes to convert', file=sys.stderr)
         sys.exit(1)
 
+    # データセットの保存先ディレクトリを作成
     root = DATA_DATASETS_DIR / args.name
     if root.exists():
         if not args.overwrite:
@@ -272,6 +346,7 @@ def main() -> None:
     # LeRobot は import に時間がかかるため必要になってから読み込む
     from lerobot.datasets.lerobot_dataset import LeRobotDataset
 
+    # LeRobotDataset を作成
     dataset = LeRobotDataset.create(
         repo_id=f'local/{args.name}',
         fps=POLICY_FPS,
@@ -280,21 +355,26 @@ def main() -> None:
         robot_type=ROBOT_TYPE,
         use_videos=True,
     )
+    # 各エピソードを処理
     for episode in targets:
         frames = 0
         stale = 0
         for frame, age_sec in iter_frames(episode):
+            # タスク情報をフレームに追加
             frame['task'] = args.task
             dataset.add_frame(frame)
             frames += 1
             stale += age_sec > STALE_WARNING_SEC
+        # フレームが存在しない場合はスキップ
         if frames == 0:
             print(f'episode {episode.number}: no frames (missing image/telemetry/status), skipped')
             dataset.clear_episode_buffer()
             continue
+        # エピソードを保存
         dataset.save_episode()
         warning = f', {stale} frame(s) used data older than {STALE_WARNING_SEC} s' if stale else ''
         print(f'episode {episode.number}: saved {frames} frames{warning}')
+    # データセットファイナライズ
     dataset.finalize()
     print(f'\ndataset saved to {root}')
 

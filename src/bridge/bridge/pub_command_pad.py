@@ -107,6 +107,14 @@ class PadCommandPublisher(CommandPublisher):
         self.get_logger().info(f"Gamepad initialized: {self.joystick.get_name()}")
 
     def _validate_gamepad_layout(self) -> bool:
+        """
+        ゲームパッドの軸数・ボタン数が入力マッピングを満たすかを確認します。
+
+        同じ構成のエラーログは1回だけ出力します(再接続待ちの間に繰り返し出さないため)。
+
+        Returns:
+            bool: マッピングに必要な軸数・ボタン数がある場合は True
+        """
         if (
             self._axis_count < GAMEPAD_AXES_INDEX_TO_COMMAND_MAPPING_LEN
             or self._button_count < GAMEPAD_BUTTON_INDEX_TO_COMMAND_MAPPING_LEN
@@ -127,6 +135,18 @@ class PadCommandPublisher(CommandPublisher):
         return True
 
     def _get_command_index_from_button_index(self, button_index: int) -> int:
+        """
+        ボタン番号を ROBOBIKE コマンド番号に変換します。
+
+        Args:
+            button_index (int): ゲームパッドのボタン番号
+
+        Returns:
+            int: ROBOBIKE コマンド番号(1以上)、または GAMEPAD_ACTION_* の特殊操作(0以下)
+
+        Raises:
+            ValueError: ボタン番号がマッピングの範囲外の場合
+        """
         if button_index < 0 or button_index >= GAMEPAD_BUTTON_INDEX_TO_COMMAND_MAPPING_LEN:
             raise ValueError(f"Invalid button index: {button_index}")
         command = GAMEPAD_BUTTON_INDEX_TO_COMMAND_MAPPING[button_index]
@@ -137,9 +157,24 @@ class PadCommandPublisher(CommandPublisher):
         axes_index: int,
         axes_value: float
     ) -> dict | None:
+        """
+        軸番号と軸値から、送信するコマンドの辞書を作成します。
+
+        Args:
+            axes_index (int): ゲームパッドの軸番号
+            axes_value (float): 軸値(-1.0〜1.0)
+
+        Returns:
+            dict | None: {"command_index": n[, "value": v]}。割り当てがない場合は None
+
+        Raises:
+            ValueError: 軸番号がマッピングの範囲外の場合
+        """
         if not 0 <= axes_index < GAMEPAD_AXES_INDEX_TO_COMMAND_MAPPING_LEN:
             raise ValueError(f"Invalid axes index: {axes_index}")
 
+        # 軸値を3段階(0:負側に倒した、1:中立付近、2:正側に倒した)に分け、
+        # GAMEPAD_AXES_INDEX_TO_COMMAND_MAPPING の列を選ぶ
         if axes_value <= GAMEPAD_VALUE_THRESHOLD - 1.0:
             order = 0
         elif axes_value >= 1.0 - GAMEPAD_VALUE_THRESHOLD:
@@ -228,6 +263,11 @@ class PadCommandPublisher(CommandPublisher):
         self._gamepad_connected = False
 
     def timer_callback(self) -> None:
+        """
+        GAMEPAD_CHECK_INTERVAL_SEC ごとにゲームパッドの状態を読み取り、前回から変化した入力をコマンドとして送信します。
+
+        切断を検知した場合は緊急停止してエピソードを終了し、再接続されたらゲームパッドを初期化し直します。
+        """
         try:
             # ゲームパッドの状態を更新する
             pygame.event.pump()  # イベントキューを更新（必須）
@@ -237,6 +277,8 @@ class PadCommandPublisher(CommandPublisher):
                 self._handle_disconnect("Gamepad disconnected; waiting for reconnection.")
                 return
 
+            # 切断後に再接続された場合はジョイスティックを初期化し直す
+            # (Publishは再開しない。再開は START/RB で行う)
             if self.joystick is None:
                 self.joystick = pygame.joystick.Joystick(GAMEPAD_DEV_LETTER)
                 self.joystick.init()
@@ -250,6 +292,7 @@ class PadCommandPublisher(CommandPublisher):
                 self._gamepad_connected = True
                 self.get_logger().info(f"Gamepad reconnected: {self.joystick.get_name()}")
 
+            # 現在の軸・ボタンの値を読み取る
             axes = [
                 self.joystick.get_axis(i)
                 for i in range(self.joystick.get_numaxes())
@@ -420,6 +463,12 @@ class PadCommandPublisher(CommandPublisher):
         return command_value_list
 
 def main() -> None:
+    """
+    メイン関数
+
+    ゲームパッド操作をコマンドに変換して配信するノードを起動します。
+    Ctrl+C を押すと、Publish中であれば緊急停止コマンドを送信してから終了します。
+    """
     # Ctrl+C 後もコンテキストを有効なまま保ち、destroy_node() で緊急停止コマンドを
     # 送信できるようにするため、rclpy のシグナルハンドラを使わない
     # (タイマーで定期的に spin が戻るため、Ctrl+C は KeyboardInterrupt として届く)

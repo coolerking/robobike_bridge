@@ -9,7 +9,7 @@
 | 提出物 | URL |
 |---|---|
 | コード | <https://github.com/coolerking/robobike_bridge> |
-| 実機動画（公開済み） | <https://youtu.be/iRC0z24Np8g> |
+| 実機動画（公開済み） | <https://youtu.be/HuFS3oEyX9M> |
 
 ### 1. 課題の概要と目的
 

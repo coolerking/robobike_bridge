@@ -358,6 +358,12 @@ class RobobikeBridge():
 
 
 def test_robobike_bridge() -> None:
+    """
+    疎通テスト
+
+    ROBOBIKE(または --dummy で dummybike)にステータス取得・全停止・バッファ消去・
+    テレメトリ取得を順に実行し、結果を表示します。
+    """
     # ダミーを使うかどうかを指定する引数を処理して、IPアドレスを決定する
     parser = argparse.ArgumentParser(
         prog="robobike_bridge",

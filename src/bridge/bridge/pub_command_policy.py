@@ -147,6 +147,16 @@ class PolicyCommandPublisher(CommandPublisher):
             self.stop_policy()
 
     def _parse_json(self, msg: String, name: str) -> Optional[dict]:
+        """
+        String メッセージの JSON を辞書として取り出します。
+
+        Args:
+            msg (String): 受信したメッセージ
+            name (str): ログに出す入力名
+
+        Returns:
+            Optional[dict]: 解析した辞書。JSON として不正、または辞書でない場合は None
+        """
         try:
             data = json.loads(msg.data)
         except json.JSONDecodeError as error:
@@ -169,6 +179,12 @@ class PolicyCommandPublisher(CommandPublisher):
         self.stop_pub()
 
     def _warn_throttled(self, message: str) -> None:
+        """
+        警告ログを WARNING_THROTTLE_SEC 秒に1回まで出力します(制御周期ごとに同じ警告を出さないため)。
+
+        Args:
+            message (str): 警告メッセージ
+        """
         now = time.monotonic()
         if now - self._last_warning_time >= WARNING_THROTTLE_SEC:
             self.get_logger().warning(message)
@@ -256,6 +272,12 @@ class PolicyCommandPublisher(CommandPublisher):
 
 
 def main() -> None:
+    """
+    メイン関数
+
+    学習済みモデルを読み込み、方策で操舵コマンドを配信するノードを起動します。
+    Ctrl+C を押すと、Publish中であれば緊急停止コマンドを送信してから終了します。
+    """
     parser = argparse.ArgumentParser(
         prog='pub_command_policy',
         description='Publish ROBOBIKE steering commands from a trained ACT policy'

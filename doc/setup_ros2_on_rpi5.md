@@ -10,7 +10,7 @@ Dockerなどのコンテナを使わずに、Raspberry Pi 5のホストOS上に�
 
 よってこのバージョンを前提にインストール手順の概要を紹介する
 
-## Raspberry Pi 5 に Ubuntu Desktop 26.04.1 LTS をインストールする
+## 1. Raspberry Pi 5 に Ubuntu Desktop 26.04.1 LTS をインストールする
 
 - PCにRaspberry Pi Imagerをインストール
 - SDカードを指し Raspberry Pi Imagerを起動
@@ -26,7 +26,7 @@ Dockerなどのコンテナを使わずに、Raspberry Pi 5のホストOS上に�
     - ユーザ・パスワード設定が必要なので設定する
     - WiFi接続の場合、Desktop画面右上からWiFi AP指定を行い接続する
 
-## Ubuntu Desktop 上でROS2 Lyrical Luth をインストールする
+## 2. Ubuntu Desktop 上でROS2 Lyrical Luth をインストールする
 
 - ターミナルを起動して、以下を実行する
 ```bash
@@ -68,7 +68,7 @@ git config --global user.email "you@example.com"
 gh auth login #　ブラウザを使いながら認証を通す
 ```
 
-## 本リポジトリの展開
+## 3. 本リポジトリの展開
 
 - Raspberry Pi 5にUSBカメラが接続されていることを確認
 - Raspberry Pi5デスクトップへログイン

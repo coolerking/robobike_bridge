@@ -66,6 +66,13 @@ class PendingCommand:
     """送信待ちのROBOBIKE操作系コマンド。"""
 
     def __init__(self, command: str, value: Optional[int]) -> None:
+        """
+        送信待ちコマンドを作成し、受信時刻を記録します。
+
+        Args:
+            command (str): ROBOBIKE コマンド名
+            value (Optional[int]): 操舵値(-100〜100)。値を持たないコマンドは None
+        """
         self.command = command
         self.value = value
         # 受信時刻(送信までの待ち時間の計測用)

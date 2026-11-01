@@ -21,7 +21,14 @@ class CommandPublisher(Node):
     """ROBOBIKEコマンドを共通形式でpublishする基底クラス。"""
 
     def __init__(self, node_name: str = 'command_publisher'):
+        """
+        コマンド送信用 Publisher を作成します(初期状態は Publish 停止中)。
+
+        Args:
+            node_name (str): ROSノード名。デフォルトは 'command_publisher'。
+        """
         super().__init__(node_name)
+        # Publish可否フラグ(停止系コマンドはこのフラグに関係なく送信する)
         self.is_publish = False
         self.publisher = self.create_publisher(
             String,

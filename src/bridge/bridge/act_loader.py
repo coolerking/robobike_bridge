@@ -29,7 +29,15 @@ from safetensors.torch import load_file
 
 
 def _to_features(raw: dict[str, Any]) -> dict[str, PolicyFeature]:
-    """config.json の features 定義を PolicyFeature の辞書に変換します。"""
+    """
+    config.json の features 定義を PolicyFeature の辞書に変換します。
+
+    Args:
+        raw (dict[str, Any]): config.json の内容
+
+    Returns:
+        dict[str, PolicyFeature]: 変換後の features 辞書
+    """
     return {
         key: PolicyFeature(type=FeatureType[value['type']], shape=tuple(value['shape']))
         for key, value in raw.items()
@@ -54,12 +62,15 @@ def load_act_policy(
         tuple[ACTPolicy, Any, Any]: (評価モードの方策, 前処理パイプライン, 後処理パイプライン)
     """
     path = Path(path)
+    # 学習時に保存された設定(draccus を使わずに JSON として読む)
     raw = json.loads((path / 'config.json').read_text())
     if raw.get('type') != 'act':
         raise ValueError(f"Unsupported policy type: {raw.get('type')!r}")
 
+    # ACTConfig のコンストラクタ引数にある項目だけを渡す(type など init 対象外の項目は除く)
     init_names = {field.name for field in dataclasses.fields(ACTConfig) if field.init}
     kwargs = {key: value for key, value in raw.items() if key in init_names}
+    # JSON では文字列・リストのままなので、features と正規化方式を LeRobot の型に変換する
     kwargs['input_features'] = _to_features(raw['input_features'])
     kwargs['output_features'] = _to_features(raw['output_features'])
     kwargs['normalization_mapping'] = {
@@ -73,10 +84,12 @@ def load_act_policy(
         kwargs['n_action_steps'] = n_action_steps
     config = ACTConfig(**kwargs)
 
+    # 方策を作成して学習済みの重みを読み込み、推論(評価)モードにする
     policy = ACTPolicy(config)
     policy.load_state_dict(load_file(path / 'model.safetensors'), strict=True)
     policy.to(config.device).eval()
 
+    # 学習時の正規化統計を使う前処理・後処理を読み込む(デバイスは推論時の指定に合わせる)
     preprocessor, postprocessor = make_pre_post_processors(
         config,
         pretrained_path=str(path),

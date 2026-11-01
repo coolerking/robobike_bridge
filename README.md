@@ -14,12 +14,14 @@
       width="800">
   </picture>
 </p>
-<!-- ![ROBOBIKE概観](./assets/overview.png) -->
 本リポジトリは、 [ROBOBIKE](https://robobikejp.com/) をROS2 Lyrical Luth を使った自律走行運転を実現するためのプログラムを提供します。
 
 
 
 ## 1. ROBOBIKE システム
+
+本リポジトリではROBOBIKE本体が1台必要です。
+ROBOBIKEを入手すると、ROBOBIKEをリモートで手動運転するシステムが利用できるようになります（本リポジトリでは、ROBOBIKEシステムと呼称）。
 
 ![ROBOBIKE システム構成](./assets/robobike_base_system.png)
 
@@ -28,6 +30,8 @@
 > 購入時の価格は8,800円（税込）
 
 販売されている ROBOBIKE をそのまま使用しています（一切改変を加えていません）。
+
+- [ROBOBIKE 仕様分析](./doc/controller_map.md)
 
 ### 1.1 駆動系
 
@@ -57,6 +61,9 @@
 
 ## 2. ROBOBIKE Bridge システム
 
+本リポジトリでは、ROBOBIKEシステムを自動運転化する機能を包括して「ROBOBIKE Bridge システム」と故障しています。
+ROBOBIKE Bridgeシステムのすべての機能を実行するためには、（ROBOBIKE本体以外に）以下のものが必要になります。
+
 ![ROBOBIKE Bridge システム構成](./assets/robobike_bridge_system.png)
 
 ### 2.1 テレオペデバイス（ゲームパッド）
@@ -66,7 +73,7 @@
 - Elecom JC-U4113S X-mode
     - USBドングルをBridgeノードに接続
 
-## 2.2 Bridge ノード（Raspberry Pi）
+## 2.2 Bridge ノード（Raspberry Pi＋カメラ）
 
 
 Bridgeノードは主にROS2夜ピック通信とROBOBIKEのブリッジとして機能します。
@@ -119,10 +126,13 @@ Bridgeノードで収集したデータセットをACTで扱える形式にデ�
     - 192.168.4.1 デフォルトルータ兼ロボットデバイス：ROBOBIKE
     - 192.168.4.X モニターデバイス: Raspberry Pi 5
 
+### 3. ROBOBIKE Bridge システム ソフトウェア
 
-### 2.5 ソフトウェア構成
+本リポジトリは、ROBOBIKE Bridge システムを実現するためのソフトウェアを提供します。
 
-ROS2 パッケージ `bridge`(`src/bridge`)と、PC 専用の学習データ変換スクリプト(`policy`)で構成しています。
+### 3.1 ソフトウェア構成
+
+ROS2 パッケージ `bridge` ( `src/bridge` )と、PC 専用の学習データ変換スクリプト(`policy`)で構成しています。
 
 | ノード | 実行場所 | 内容 |
 |---|---|---|
@@ -135,18 +145,90 @@ ROS2 パッケージ `bridge`(`src/bridge`)と、PC 専用の学習データ変�
 | `dummybike` | どちらでも | ROBOBIKE の代わりのダミーサーバ(実機なしのテスト用) |
 | `calibration` | Raspberry Pi | 走行開始時の速度設定値(mot_spd)の調整 |
 
-Raspberry Pi 側は launch ファイルでまとめて起動します。
+
+
+## 4. セットアップ
+
+本リポジトリでは ROS2 をしようしていますが、複数のノードを別々のコンピュータで実行します。このため両方のコンピュータの環境変数 ROS_DOMAIN_ID に同じ値を指定してください。
+
+本リポジトリでは 10 を指定していることを前提として記述しています。
 
 ```bash
+export ROS_DOMAIN_ID=10
+```
+
+### 4.1 Bridge ノード
+
+「[Ubuntu Desktop 26.04 LTS/Raspberry Pi 5(16GB) に ROS2 (Lyrical Luth) をインストールする方法](./doc/setup_ros2_on_rpi5.md)」をもとに、セットアップしてください。
+
+### 4.2 Policy ノード
+
+Policyノードでは、方策(Policy)の学習・推論を実行する機能をもたせるため、PCを用意してください。
+PCには「[Ubuntu Desktop 26.04 LTS/Raspberry Pi 5(16GB) に ROS2 (Lyrical Luth) をインストールする方法](./doc/setup_ros2_on_rpi5.md)」のセクション2以降は同じですので、リンクを参考にセットアップしてください。
+
+> ホストPCがUbuntu以外の場合、DockerやWSLなどのコンテナ運用ソフトウェアをもちいてUbuntu 26.4 LTSイメージを起動し、リンクのセクション2以降を参考にセットアップしてください。
+> 
+
+## 5. 実行方法
+
+Raspberry Pi 側は launch ファイルでまとめて起動します。
+
+`~/ros_ws` 以下で本リポジトリをcloneしている場合は以下の順番で実行します
+
+### 5.1 Bridgeノード
+
+
+```bash
+source /opt/ros/lyrical/setup.bash
+cd ~/ros_ws/robobike_bridge
+source install/setup.bash
 ros2 launch bridge collect.launch.py                  # 学習データの収集(記録あり)
-ros2 launch bridge collect.launch.py watchdog:=true   # 方策で走行(PC で pub_command_policy を実行)
 ros2 launch bridge collect.launch.py dummy:=true      # dummybike で動作確認(実機不要)
 ```
+
+> 実機を停止している・購入していない場合、dummybike.py にダミーサーバを実行できるようにしています。
+> ただし、すべて同じ値しか返さないので、学習データセットを作っても（動作はするとおもいますが）、学習した方策は使用しないでください。
+
+### 5.2 Policyノード
+
+```bash
+source /opt/ros/lyrical/setup.bash
+cd ~/ros_ws/robobike_bridge
+source install/setup.bash
+ros2 launch bridge collect.launch.py watchdog:=true   # 方策で走行(PC で pub_command_policy を実行)
+```
+
+
+
+## 7. 操作方法
+
+学習データを作成するためには、手動でROBOBIKEを実際に運転してデータを作成する必要があります。
+Bridgeノードに接続したゲームパッドは、以下のコマンドを設定しています。
+
+![ゲームパッドマッピング前面](./assets/gamepad_mapping01.png)
+
+![ゲームパッドマッピング上面](./assets/gamepad_mapping02.png)
+
+### 7.1 操作例
+
+GUIDEボタンが点灯していると、Bridgeノードと接続てきています（点滅時は接続中）。点灯していることを確認し、前章のプログラムが動作している状態にしてから、操作を行ってください。
+
+1. ROBOBIKEを初期位置におく
+2. STARTボタン押下（新エピソード開始、同時にPublishも開始される）
+3. Xボタン押下(前進)
+4. 左もしくは右のアナログをつかって操作
+5. 予定位置にきたら、Aボタンを押下（停止）
+    - 失敗した場合、BACKボタン押下でエピソードを終了する
+    - 緊急停止は、LT/RTボタンを押下すること
+6. BACKボタン押下（エピソード終了）
+
+
+## 8. 学習データの変換・学習・推論
 
 学習データの変換・学習・推論の手順は [policy/README.md](./policy/README.md) を参照してください。
 データセット・学習結果は `~/robobike_data`(環境変数 `ROBOBIKE_DATA_DIR` で変更可)に保存します。
 
-## 現状と既知の問題
+## 9. 現状と既知の問題
 
 - 収集 → 変換 → 学習 → 推論 → ROBOBIKE へのコマンド送信まで、一連の動作を確認済みです
 - ゲームパッドでの手動運転が難しく(すぐに転倒する)、学習データはまだごく少量です。そのため学習済み方策で走行できる段階には至っていません
@@ -154,13 +236,19 @@ ros2 launch bridge collect.launch.py dummy:=true      # dummybike で動作確�
 - Ctrl+C で終了すると `process has died` などのエラーが表示されることがあります(動作には影響しません)
 - `colcon test` のコードスタイル検査(flake8・pep257・mypy)には未対応の指摘が残っています(機能テストは成功)
 
-## ROS_DOMAIN_ID
 
-```bash
-export ROS_DOMAIN_ID=10
-```
+## A. ライセンス
 
-## 参考
+- [MIT License](./LICENSE)
+
+## B. その他
+
+### B.1 設計
+
+- [要件定義、システム化対象の決定](./doc/requirement_artifact.md)
+- [アーキテクチャ設計](./doc/architecture_design.md)
+
+### B.2 参考
 
 - ROBOBIKE
     - [ROBOBIKE公式サイト](https://robobikejp.com/)
@@ -170,11 +258,9 @@ export ROS_DOMAIN_ID=10
         URL公開されていたが、現在では公式サイトからの申し込みが必要
     - [ROBOBIKE 仕様 分析結果](./doc/controller_map.md)
 
-## ライセンス
 
-- [MIT License](./LICENSE)
 
-## 備考
+### B.2 備考
 
 - ROBOBIKE はモバイルロボット研究会の登録商標です。
 - 本リポジトリのテスト・動作チェックでは、実機に積載されている人形を Figma に変更しています（開発・販売元の保証する状態での使用ではありません）。
