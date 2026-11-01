@@ -361,7 +361,7 @@ end note
 ## A. リファレンス
 
 - [ROBOBIKE Bridge GitHubリポジトリ](https://github.com/coolerking/robobike_bridge.git)
-- [最終課題提出用Youtube動画](https://youtu.be/iRC0z24Np8g)
+- [最終課題提出用Youtube動画](https://youtu.be/HuFS3oEyX9M)
 - [ROBOBIKE](https://robobikejp.com/)
 
 <p align="right">以上</p>
