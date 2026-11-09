@@ -16,7 +16,14 @@
 </p>
 本リポジトリは、 [ROBOBIKE](https://robobikejp.com/) をROS2 Lyrical Luth を使った自律走行運転を実現するためのプログラムを提供します。
 
-
+<p align="center">
+    <a href="https://youtu.be/HEJPfwL0SyI">
+        <img
+            src="https://img.youtube.com/vi/HEJPfwL0SyI/hqdefault.jpg"
+            alt="ROBOBIKE Bridge 紹介動画（クリックして YouTube で再生）"
+            width="640">
+    </a>
+</p>
 
 ## 1. ROBOBIKE システム
 
